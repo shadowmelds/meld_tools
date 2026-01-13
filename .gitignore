@@ -1,0 +1,18 @@
+*.pyc
+
+# vscode
+*.code-workspace
+.vscode/
+.mypy_cache/
+.idea/
+.VSCodeCounter/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+*.blend1
+.coverage
+htmlcov/
