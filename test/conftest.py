@@ -28,8 +28,15 @@ def context_blend(context: Context) -> Context:
 
 
 @pytest.fixture
-def scene_workflow(context_blend: Context) -> Callable[..., Scene | None]:
+def scene_mesh(context_blend: Context) -> Callable[..., Scene | None]:
     return lambda obj_name: select_scene_and_object(context_blend, "MESH", obj_name)
+
+
+@pytest.fixture
+def scene_ribbon_mesh(context_blend: Context) -> Callable[..., Scene | None]:
+    return lambda obj_name: select_scene_and_object(
+        context_blend, "ribbon_mesh", obj_name
+    )
 
 
 def select_scene_and_object(

@@ -1,3 +1,6 @@
+import re
+
+
 def increment_last_number(input_str: str, increment_value: int) -> str:
     """对字符串最后一个数字进行增加"""
     # 寻找最后一个数字的结束位置
@@ -59,36 +62,10 @@ def replace_start_keywords(keywords: str, name: str) -> str:
     return name  # 如果没有返回原名
 
 
-def match_with_star(str1: str, str2: str) -> bool:
-    """传入的两个字符串进行匹配，可变化的地方用*代替
-    match_with_star("a*b*c", "axxxbxxxc")  # True
+def match_with_wildcard(str1: str, str2: str) -> bool:
     """
-
-    # 没有通配符，直接全等判断
-    if "*" not in str1:
-        return str1 == str2
-
-    parts: list[str] = str1.split("*")
-
-    position: int = 0
-
-    # 处理第一个片段（如果不是以 * 开头，必须从头匹配）
-    if parts[0]:
-        if not str2.startswith(parts[0]):
-            return False
-        position = len(parts[0])
-
-    # 处理中间片段
-    for part in parts[1:-1]:
-        if not part:
-            continue
-        idx = str2.find(part, position)
-        if idx == -1:
-            return False
-        position = idx + len(part)
-
-    # 处理最后一个片段（如果不是以 * 结尾，必须匹配结尾）
-    if parts[-1]:
-        return str2.endswith(parts[-1])
-
-    return True
+    传入的两个字符串进行匹配，可变化的地方用*代替
+    match_with_start("a*b*c", "axxxbxxxc") # True
+    """
+    pattern = "^" + re.escape(str1).replace(r"\*", ".*") + "$"
+    return re.match(pattern, str2) is not None

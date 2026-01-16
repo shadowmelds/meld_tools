@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Generic, Iterator, Optional, TypeVar
 
 T = TypeVar("T")
@@ -12,11 +12,14 @@ class Result(Generic[T]):
     data: Optional[T] = None
     success_count: int = 0
     error_count: int = 0
+    _message: Optional[str] = field(default="", repr=False)
 
     @property
     def message(self) -> str:
-        return f"成功：{self.success_count}" + (
-            f", 失败：{self.error_count}" if self.error_count > 0 else ""
+        return (
+            self._message
+            + (f"成功：{self.success_count}" if self.success_count > 0 else "")
+            + (f", 失败：{self.error_count}" if self.error_count > 0 else "")
         )
 
     def __iter__(self) -> Iterator:
@@ -32,7 +35,7 @@ class Result(Generic[T]):
     def ok(
         cls,
         data: T = None,
-        success_count: int = 1,
+        success_count: int = 0,
         error_count: int = 0,
         message: str = "success",
     ) -> Result[T]:
@@ -41,9 +44,9 @@ class Result(Generic[T]):
             data=data,
             success_count=success_count,
             error_count=error_count,
-            message=message,
+            _message=message,
         )
 
     @classmethod
-    def fail(cls, message: str, count: int = 1) -> Result:
-        return Result(success=False, message=message, error_count=count)
+    def fail(cls, message: str, error_count: int = 1) -> Result:
+        return Result(success=False, _message=message, error_count=error_count)

@@ -1,0 +1,11 @@
+{
+  "python.analysis.diagnosticSeverityOverrides": {
+    // 禁止提示注解为实例的写法
+    "reportInvalidTypeForm": "none" 
+  },
+  "python.testing.pytestArgs": [
+    "test"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+}

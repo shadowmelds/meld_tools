@@ -2,6 +2,7 @@ import importlib
 import os
 import sys
 import typing
+from typing import Any, Callable
 
 # 1. 检查当前环境是否缺少 override
 if not hasattr(typing, "override"):
@@ -11,13 +12,13 @@ if not hasattr(typing, "override"):
         sys.path.insert(0, current_dir)  # 插入到最前面确保优先加载
 
     try:
-        from typing_extensions import override
+        from .typing_extensions import override
 
         # 3. 动态注入到全局 typing 模块中
         typing.override = override
     except ImportError:
         # 4. 万一没找到文件，定义一个不起作用的装饰器作为保底
-        def override(func):
+        def override(func: Callable) -> Callable[..., Any]:
             return func
 
         typing.override = override
@@ -52,7 +53,7 @@ from .general.prints import (
     ui_prints,
 )
 from .general.ribbon_mesh import (
-    ops_generate_emity_objects,
+    ops_generate_empty_objects,
     ops_generate_inherent_bones,
     props_scene_ribbon_mesh,
     ui_ribbon_mesh,
@@ -138,7 +139,7 @@ modules: list = [
     # general.drivers
     ops_drivers,
     # general.ribbon
-    ops_generate_emity_objects,
+    ops_generate_empty_objects,
     ops_generate_inherent_bones,
     # ow.main
     ops_action_match_ow,

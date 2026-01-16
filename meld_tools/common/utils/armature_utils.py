@@ -14,7 +14,7 @@ from bpy.types import (
 from mathutils import Vector
 
 from ..models.bone_desc import BoneDesc
-from ..models.result_info import ResultInfo
+from ..models.result import Result
 from ..models.simple_bone import SimpleBone
 
 
@@ -287,26 +287,20 @@ def only_select_ebones(
 
 def create_ebone_with_desc(
     active_armature: Object,
-    context: Context,
     list_bone_desc: list[BoneDesc],
-) -> ResultInfo:
-    if context.mode != "EDIT_ARMATURE" and bpy.ops.object.mode_set.poll():
-        bpy.ops.object.mode_set(mode="EDIT", toggle=False)
-
+) -> Result:
     ebones: ArmatureEditBones = active_armature.data.edit_bones
-    result: ResultInfo = ResultInfo()
-
     for bone_desc in list_bone_desc:
         head: Vector = None
         tail: Vector = None
-        if bone_desc.head != None:
+        if bone_desc.head is not None:
             head = bone_desc.head
-        elif bone_desc.position_bone != None:
+        elif bone_desc.position_bone is not None:
             if bone_desc.position_bone_location == "HEAD":
                 head = bone_desc.position_bone.head.copy()
             elif bone_desc.position_bone_location == "TAIL":
                 head = bone_desc.position_bone.tail.copy()
-        elif bone_desc.position_bone_by_name != None:
+        elif bone_desc.position_bone_by_name is not None:
             position_ebone: EditBone | None = ebones.get(
                 bone_desc.position_bone_by_name
             )
@@ -317,19 +311,15 @@ def create_ebone_with_desc(
                     head = position_ebone.tail.copy()
 
         if head is None:
-            return ResultInfo(
-                status=False, message=f"未生成：'{bone_desc.name}' 没有head参考位置"
-            )
+            return Result.fail(f"未生成：'{bone_desc.name}' 没有head参考位置")
 
-        if bone_desc.tail != None:
+        if bone_desc.tail is not None:
             tail = bone_desc.tail
         elif bone_desc.tail_offset is None:
             tail = head.copy() + bone_desc.tail_offset
 
         if tail is None:
-            return ResultInfo(
-                status=False, message=f"未生成：'{bone_desc.name}' 没有tail参考位置"
-            )
+            return Result.fail(f"未生成：'{bone_desc.name}' 没有tail参考位置")
 
         ebone: EditBone = ebones.new(bone_desc.name)
 
@@ -343,7 +333,7 @@ def create_ebone_with_desc(
             if parent:
                 ebone.parent = parent
             else:
-                result.failure_count += 1
+                return Result.fail(f"未找到父级 {bone_desc.parent}")
 
         if bone_desc.collections:
             for collection in bone_desc.collections:
@@ -355,18 +345,13 @@ def create_ebone_with_desc(
             if bone_desc.calculate_roll:
                 bpy.ops.armature.calculate_roll(type=bone_desc.calculate_roll)
 
-    result.message = f"未找到父级数量：{result.failure_count}"
-    return result
+    return Result.ok()
 
 
 def setup_pbone_with_desc(
     active_armature: Object,
-    context: Context,
     list_bone_desc: list[BoneDesc],
-) -> ResultInfo:
-    if context.mode != "POSE" and bpy.ops.object.mode_set.poll():
-        bpy.ops.object.mode_set(mode="POSE", toggle=False)
-
+) -> Result:
     for bone_desc in list_bone_desc:
         bone: Bone = active_armature.data.bones.get(bone_desc.name)
         pbone: PoseBone = active_armature.pose.bones.get(bone_desc.name)
@@ -390,20 +375,17 @@ def setup_pbone_with_desc(
                 if hasattr(pbone, "cloudrig_component"):
                     pbone.cloudrig_component.component_type = "Bone Copy"
         else:
-            return ResultInfo(
-                status=False,
+            return Result.fail(
                 message=f"'{bone_desc.name}'不存在，未能成功设置 PoseBone 属性",
             )
+    return Result.ok(success_count=len(list_bone_desc))
 
 
 def mirror_ebone_with_desc(
     active_armature: Object,
-    context: Context,
     list_bone_desc: list[BoneDesc],
-):
-    if context.mode != "EDIT_ARMATURE" and bpy.ops.object.mode_set.poll():
-        bpy.ops.object.mode_set(mode="EDIT", toggle=False)
-
+) -> Result:
+    """镜像传入的 BoneDesc"""
     ebones: ArmatureEditBones = active_armature.data.edit_bones
     # 清空选择
     for b in ebones:
@@ -415,11 +397,10 @@ def mirror_ebone_with_desc(
             if ebone := ebones.get(bone_desc.name):
                 select_ebones.append(ebone)
         else:
-            return ResultInfo(
-                status=False, message=f"'{bone_desc.name}'不存在，未能镜像"
-            )
+            return Result.fail(message=f"'{bone_desc.name}'不存在，未能镜像")
     if only_select_ebones(ebones=ebones, select_ebone=select_ebones):
         bpy.ops.armature.symmetrize()
+    return Result.ok(success_count=len(select_ebones))
 
 
 def get_selected_pbones(active_armature: Object) -> list[PoseBone]:

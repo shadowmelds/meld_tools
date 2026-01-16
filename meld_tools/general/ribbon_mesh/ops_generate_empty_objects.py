@@ -1,16 +1,19 @@
 from typing import override
 
+import bmesh
 import bpy
 import mathutils
-from bpy.types import Context, Mesh, Object
+from bmesh.types import BMVert
+from bpy.types import Collection, Context, Object
 
 from ...common.base.base_operator import BaseOperator
+from ...common.models.result import Result
 from ...common.utils.object_utils import is_transform_applied
 from .props_scene_ribbon_mesh import RibbonMeshSceneProperties
 
 
-class GenerateEmityObjectsOperator(BaseOperator):
-    bl_idname: str = "meldtool.generate_emity_objects"
+class GenerateEmptyObjectsOperator(BaseOperator):
+    bl_idname: str = "meldtool.generate_empty_objects"
     bl_label: str = "生成空物体"
     bl_options: set = {"REGISTER", "UNDO"}
     bl_description: str = "选中的每个顶点生成空物体并作为顶点子级"
@@ -18,15 +21,13 @@ class GenerateEmityObjectsOperator(BaseOperator):
     @classmethod
     @override
     def poll(cls, context: Context) -> bool:
-        obj: Object | None = context.active_object
         ribbon_mesh: RibbonMeshSceneProperties = (
             context.scene.meldtool_scene_properties.ribbon_mesh
         )
-        return (
-            bool(ribbon_mesh.empty_object_collection)
-            and obj is not None
-            and obj.type == "MESH"
-            and context.mode == "EDIT_MESH"
+        return cls.validate_mesh_edit(
+            context, context.active_object, strict_mode=True
+        ) and cls.validate(
+            bool(ribbon_mesh.empty_object_collection), "未选择空物体存放集合"
         )
 
     @override
@@ -35,25 +36,41 @@ class GenerateEmityObjectsOperator(BaseOperator):
         ribbon_mesh: RibbonMeshSceneProperties = (
             context.scene.meldtool_scene_properties.ribbon_mesh
         )
-        if active_object != "MESH" and context.mode != "EDIT_MESH":
-            self.report({"ERROR"}, "请选择丝带网格物体并选中顶点")
+
+        if self.validate_mesh_edit(context, active_object, self):
+            return {"CANCELLED"}
+        bm = bmesh.from_edit_mesh(active_object.data)
+        select_vertex: list[BMVert] = [v for v in bm.verts if v.select]
+        if self.validate(len(select_vertex) > 0, "请选中需要生成空物体的顶点", self):
             return {"CANCELLED"}
 
-        if not is_transform_applied(active_object):
-            self.report({"ERROR"}, "请先应用丝带网格物体变换")
+        if self.validate(
+            is_transform_applied(active_object), "请先应用丝带网格物体变换", self
+        ):
             return {"CANCELLED"}
+        result: Result = self._generate_empty(
+            active_object, select_vertex, ribbon_mesh.empty_object_collection
+        )
+        self.report({"INFO"}, result.message)
+        return {"FINISHED"}
 
-        mesh: Mesh = active_object.data
-        for v in mesh.vertices:
+    def _generate_empty(
+        self,
+        object: Object,
+        select_vertex: list[BMVert],
+        empty_collection: Collection,
+    ) -> Result:
+        count: int = 0
+        for v in select_vertex:
             if not v.select:
                 continue
 
             # 顶点世界坐标
-            vertex_world: mathutils.Matrix = active_object.matrix_world @ v.co
+            vertex_world: mathutils.Matrix = object.matrix_world @ v.co
 
             # 创建空物体，位置固定在原点
             empty: Object = bpy.data.objects.new(f"VTX_{v.index}", None)
-            ribbon_mesh.empty_object_collection.objects.link(empty)  # sss
+            empty_collection.objects.link(empty)  # sss
 
             empty.empty_display_type = "PLAIN_AXES"
             empty.empty_display_size = 0.0001
@@ -63,7 +80,7 @@ class GenerateEmityObjectsOperator(BaseOperator):
             empty.scale = (1, 1, 1)
 
             # 设置顶点父级
-            empty.parent = active_object
+            empty.parent = object
             empty.parent_type = "VERTEX"
             empty.parent_vertices[0] = v.index
             empty.parent_vertices[1] = -1
@@ -71,7 +88,7 @@ class GenerateEmityObjectsOperator(BaseOperator):
 
             # 父级顶点的世界矩阵
             parent_matrix: mathutils.Matrix = (
-                active_object.matrix_world @ mathutils.Matrix.Translation(v.co)
+                object.matrix_world @ mathutils.Matrix.Translation(v.co)
             )
 
             # 关键：父级逆变换 让空物体本体保持在原点
@@ -82,8 +99,8 @@ class GenerateEmityObjectsOperator(BaseOperator):
             # rotation/scale 不参与顶点父级：保持默认
             empty.delta_rotation_euler = (0, 0, 0)
             empty.delta_scale = (1, 1, 1)
-        self.report({"INFO"}, "完成")
-        return {"FINISHED"}
+            count += 1
+        return Result.ok(success_count=count)
 
 
-registry: list = [GenerateEmityObjectsOperator]
+registry: list = [GenerateEmptyObjectsOperator]

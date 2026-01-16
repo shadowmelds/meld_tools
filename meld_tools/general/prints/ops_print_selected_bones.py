@@ -32,7 +32,7 @@ class PrintSelectedBonesOperator(BaseOperator):
                     bone_count += 1
                     print(case_string)
         elif context.mode == "EDIT":
-            for edit_bone in active_armature.data.edit_bones:
+            for edit_bone in active_armature.data.edit_bones:  # type: ignore
                 if edit_bone.select:
                     case_string: str = '"' + edit_bone.name + '",'
                     bone_count += 1

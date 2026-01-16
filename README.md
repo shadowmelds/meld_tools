@@ -58,3 +58,8 @@ pip install coverage pytest-cov
 pytest -v --durations=0 --cov=./meld_tools --cov-report=html --cov-branch
 ```
 通过`htmlcov/index.html`在网页浏览器中打开文件来查看覆盖率统计信息
+
+
+### 代办列表
+
+1. 目前所有骨架生成或修改的ops都是直接对目标骨架修改而且出错直接终止，没有撤销的操作；将骨架修改的流程改用临时骨架替换原始骨架的方式而不是直接在原始骨架上修改

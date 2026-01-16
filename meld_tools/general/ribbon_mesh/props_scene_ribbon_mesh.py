@@ -4,17 +4,15 @@ from bpy.props import (
     PointerProperty,
     StringProperty,
 )
-from bpy.types import Context, Object, PropertyGroup
+from bpy.types import Collection, Context, Object, PropertyGroup
 
 
 class RibbonMeshSceneProperties(PropertyGroup):
-    def update_use_cloud_rig(self, context: Context):
-        armature: Object = (
-            bpy.context.scene.meldtool_scene_properties.ribbon_mesh.target_armature
-        )
+    def update_use_cloud_rig(self, context: Context) -> None:
         ribbon_mesh: RibbonMeshSceneProperties = (
             bpy.context.scene.meldtool_scene_properties.ribbon_mesh
         )
+        armature: Object = ribbon_mesh.target_armature
         if armature:
             if hasattr(armature, "cloudrig"):
                 ribbon_mesh.use_cloud_rig = armature.cloudrig.enabled
@@ -22,11 +20,11 @@ class RibbonMeshSceneProperties(PropertyGroup):
                 ribbon_mesh.use_cloud_rig = False
 
     empty_object_collection: PointerProperty(
-        name="空物体集合", type=bpy.types.Collection, description="选择空物体集合"
+        name="空物体集合", type=Collection, description="选择空物体集合"
     )
     target_armature: PointerProperty(
         name="目标骨架",
-        type=bpy.types.Object,
+        type=Object,
         description="选择目标骨架",
         poll=lambda self, obj: obj.type == "ARMATURE",
         update=update_use_cloud_rig,

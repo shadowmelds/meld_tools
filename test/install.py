@@ -4,7 +4,7 @@ import bpy
 from bpy.types import Context, UserExtensionRepoCollection
 
 
-def install_this(context: Context, enable: bool = True):
+def install_this(context: Context, enable: bool = True) -> None:
     repos: UserExtensionRepoCollection = context.preferences.extensions.repos
 
     # 禁用其他所有扩展库

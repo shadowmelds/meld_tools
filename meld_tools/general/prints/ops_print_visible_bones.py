@@ -18,7 +18,7 @@ class PrintVisibleBonesOperator(BaseOperator):
     @classmethod
     @override
     def poll(cls, context: Context) -> bool:
-        active_armature: Object = context.active_object
+        active_armature: Object | None = context.active_object
         return cls.validate(
             active_armature is not None and active_armature.type == "ARMATURE",
             "活动物体不是骨架物体",
@@ -26,7 +26,7 @@ class PrintVisibleBonesOperator(BaseOperator):
 
     @override
     def execute(self, context: Context) -> set[str]:
-        active_armature: Object = context.active_object
+        active_armature: Object | None = context.active_object
         if self.validate(
             active_armature is not None and active_armature.type == "ARMATURE",
             "活动物体不是网格物体",

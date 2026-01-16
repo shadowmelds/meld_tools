@@ -42,6 +42,7 @@ class BaseOperator(Operator):
         context: Context,
         object: Object | None = None,
         operator_instance: Operator | None = None,
+        strict_mode: bool = False,
     ) -> bool:
         active_object: Object | None = object or context.active_object
         is_armature: bool = (
@@ -49,16 +50,6 @@ class BaseOperator(Operator):
             and active_object.type == "ARMATURE"
             and not active_object.hide_get()
         )
-
-        # 1. poll 阶段 (放宽条件)
-        if operator_instance is None:
-            return cls.validate(is_armature, "请选择一个可见骨架物体")
-
-        # 2. execute 阶段进行“修复”和“验证”
-        if is_armature and context.mode not in {"POSE", "EDIT_ARMATURE"}:
-            if bpy.ops.object.mode_set.poll():
-                bpy.ops.object.mode_set(mode="POSE")
-
         condition: bool = (
             is_armature
             and context.mode in {"POSE", "EDIT_ARMATURE"}
@@ -69,6 +60,23 @@ class BaseOperator(Operator):
             if not is_armature
             else "请确保活动骨架处于姿态模式或编辑模式"
         )
+        # 1. poll 阶段
+        if operator_instance is None:
+            if not strict_mode:
+                return cls.validate(is_armature, "请选择一个可见骨架物体")
+            else:
+                return cls.validate(condition, message)
+
+        # 2. execute 阶段进行“修复”和“验证”
+        if is_armature and context.mode not in {"POSE", "EDIT_ARMATURE"}:
+            if bpy.ops.object.mode_set.poll():
+                bpy.ops.object.mode_set(mode="POSE")
+
+        condition = (
+            is_armature
+            and context.mode in {"POSE", "EDIT_ARMATURE"}
+            and active_object.mode in {"EDIT", "POSE"}
+        )
 
         return cls.validate(condition, message, operator_instance)
 
@@ -78,6 +86,7 @@ class BaseOperator(Operator):
         context: Context,
         object: Object | None = None,
         operator_instance: Operator | None = None,
+        strict_mode: bool = False,
     ) -> bool:
         active_object: Object | None = object or context.active_object
         is_armature: bool = (
@@ -85,15 +94,6 @@ class BaseOperator(Operator):
             and active_object.type == "ARMATURE"
             and not active_object.hide_get()
         )
-
-        # 1. poll 阶段 (放宽条件)
-        if operator_instance is None:
-            return cls.validate(is_armature, "请选择一个可见骨架物体")
-
-        # 2. execute 阶段进行“修复”和“验证”
-        if is_armature and context.mode != "POSE":
-            if bpy.ops.object.mode_set.poll():
-                bpy.ops.object.mode_set(mode="POSE")
 
         condition: bool = (
             is_armature and context.mode == "POSE" and active_object.mode == "POSE"
@@ -104,6 +104,22 @@ class BaseOperator(Operator):
             else "请确保活动骨架处于姿态模式"
         )
 
+        # 1. poll 阶段
+        if operator_instance is None:
+            if not strict_mode:
+                return cls.validate(is_armature, "请选择一个可见骨架物体")
+            else:
+                return cls.validate(condition, message)
+
+        # 2. execute 阶段进行“修复”和“验证”
+        if is_armature and context.mode != "POSE":
+            if bpy.ops.object.mode_set.poll():
+                bpy.ops.object.mode_set(mode="POSE")
+
+        condition = (
+            is_armature and context.mode == "POSE" and active_object.mode == "POSE"
+        )
+
         return cls.validate(condition, message, operator_instance)
 
     @classmethod
@@ -112,6 +128,7 @@ class BaseOperator(Operator):
         context: Context,
         object: Object | None = None,
         operator_instance: Operator | None = None,
+        strict_mode: bool = False,
     ) -> bool:
         active_object: Object | None = object or context.active_object
         is_armature: bool = (
@@ -119,10 +136,22 @@ class BaseOperator(Operator):
             and active_object.type == "ARMATURE"
             and not active_object.hide_get()
         )
-
-        # 1. poll 阶段 (放宽条件)
+        message: str = (
+            "请选择一个可见骨架物体"
+            if not is_armature
+            else "请确保活动骨架处于编辑模式"
+        )
+        condition: bool = (
+            is_armature
+            and context.mode == "EDIT_ARMATURE"
+            and active_object.mode == "EDIT"
+        )
+        # 1. poll 阶段
         if operator_instance is None:
-            return cls.validate(is_armature, "请选择一个可见骨架物体")
+            if not strict_mode:
+                return cls.validate(is_armature, "请选择一个可见骨架物体")
+            else:
+                return cls.validate(condition, message)
 
         # 2. execute 阶段进行“修复”和“验证”
         if is_armature and context.mode != "EDIT_ARMATURE":
@@ -133,11 +162,6 @@ class BaseOperator(Operator):
             is_armature
             and context.mode == "EDIT_ARMATURE"
             and active_object.mode == "EDIT"
-        )
-        message: str = (
-            "请选择一个可见骨架物体"
-            if not is_armature
-            else "请确保活动骨架处于编辑模式"
         )
 
         return cls.validate(condition, message, operator_instance)
@@ -176,7 +200,11 @@ class BaseOperator(Operator):
 
     @classmethod
     def validate_mesh_edit(
-        cls, context: Context, object: Object | None, operator_instance: Operator = None
+        cls,
+        context: Context,
+        object: Object | None,
+        operator_instance: Operator = None,
+        strict_mode: bool = False,
     ) -> bool:
         active_object: Object | None = object or context.active_object
         is_mesh: bool = (
@@ -184,20 +212,26 @@ class BaseOperator(Operator):
             and active_object.type == "MESH"
             and not active_object.hide_get()
         )
+        condition: bool = (
+            is_mesh and context.mode == "EDIT_MESH" and active_object.mode == "EDIT"
+        )
+        message: str = "请选择一个可见网格物体" if not is_mesh else "无法进入编辑模式"
 
-        # 1. poll 阶段 (放宽条件)
+        # 1. poll 阶段
         if operator_instance is None:
-            return cls.validate(is_mesh, "请选择一个可见网格物体")
+            if not strict_mode:
+                return cls.validate(is_mesh, "请选择一个可见网格物体")
+            else:
+                return cls.validate(condition, message)
 
         # 2. execute 阶段进行“修复”和“验证”
         if is_mesh and context.mode != "EDIT_MESH":
             if bpy.ops.object.mode_set.poll():
                 bpy.ops.object.mode_set(mode="EDIT")
 
-        condition: bool = (
+        condition = (
             is_mesh and context.mode == "EDIT_MESH" and active_object.mode == "EDIT"
         )
-        message: str = "请选择一个可见网格物体" if not is_mesh else "无法进入编辑模式"
 
         return cls.validate(
             condition,

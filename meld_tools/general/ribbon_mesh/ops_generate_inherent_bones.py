@@ -12,16 +12,16 @@ from bpy.types import (
     EditBone,
     Event,
     Object,
-    Operator,
     UILayout,
 )
 from mathutils import Vector
 
+from ...common.base.base_operator import BaseOperator
 from ...common.data.rigs import ribbon_mesh
 from ...common.models.bone_desc import BoneDesc
-from ...common.models.result_info import ResultInfo
-from ...common.utils import armature_utils, name_utils, object_utils
-from ...common.utils.function_utils import run_result
+from ...common.models.result import Result
+from ...common.utils import armature_utils, name_utils
+from ...common.utils.object_utils import is_transform_applied
 from .props_scene_ribbon_mesh import RibbonMeshSceneProperties
 
 
@@ -33,13 +33,13 @@ class RibbonMeshCollections(StrEnum):
     MOUTH_RIBBON = "Mouth Ribbon"
 
 
-class GenerateImherentBonesActions(StrEnum):
+class GenerateInherentBonesSteps(StrEnum):
     ALL = "ALL"
     STEP_1 = "BLOCK_1"
     STEP_2 = "BLOCK_2"
 
 
-class GenerateInherentBonesOperator(Operator):
+class GenerateInherentBonesOperator(BaseOperator):
     bl_idname: str = "meldtool.generate_inherent_bones"
     bl_label: str = "生成固有骨骼"
     bl_options: set = {"REGISTER", "UNDO"}
@@ -48,9 +48,9 @@ class GenerateInherentBonesOperator(Operator):
     action: bpy.props.EnumProperty(
         name="Action",
         items=[
-            (GenerateImherentBonesActions.ALL, "全部", ""),
-            (GenerateImherentBonesActions.STEP_1, "MCH+Micor", ""),
-            (GenerateImherentBonesActions.STEP_2, "Local+Global", ""),
+            (GenerateInherentBonesSteps.ALL, "全部", ""),
+            (GenerateInherentBonesSteps.STEP_1, "MCH+Micor", ""),
+            (GenerateInherentBonesSteps.STEP_2, "Local+Global", ""),
         ],
     )
 
@@ -71,96 +71,80 @@ class GenerateInherentBonesOperator(Operator):
 
     @classmethod
     @override
-    def poll(cls, context: Context):
-        active_obj: Object = context.active_object
+    def poll(cls, context: Context) -> bool:
         ribbon_mesh: RibbonMeshSceneProperties = (
             context.scene.meldtool_scene_properties.ribbon_mesh
         )
+
         return (
-            bool(ribbon_mesh.empty_object_collection)
-            and bool(ribbon_mesh.target_armature)
-            and bool(ribbon_mesh.target_parent_bone)
-            and active_obj is not None
-            and active_obj.type == "ARMATURE"
-            and context.mode == "EDIT_ARMATURE"
+            cls.validate_armature_edit(context, context.active_object)
+            and cls.validate(
+                bool(ribbon_mesh.empty_object_collection), "请设置空物体集合"
+            )
+            and cls.validate(bool(ribbon_mesh.target_armature), "请设置目标骨架")
+            and cls.validate(bool(ribbon_mesh.target_parent_bone), "请设置目标父骨骼")
         )
 
-    def execute(self, context: Context):
+    @override
+    def execute(self, context: Context) -> set[str]:
         active_armature: Object = context.active_object
-        if not object_utils.is_transform_applied(active_armature):
-            self.report({"ERROR"}, "请先 Ctrl+A 应用所有变换")
+        if self.validate_armature_edit(context, active_armature, self):
+            return {"CANCELLED"}
+
+        if self.validate(
+            is_transform_applied(active_armature), "请先 Ctrl+A 应用所有变换", self
+        ):
             return {"CANCELLED"}
 
         ribbon_mesh: RibbonMeshSceneProperties = (
             context.scene.meldtool_scene_properties.ribbon_mesh
         )
-        if context.mode != "EDIT_ARMATURE" and bpy.ops.object.mode_set.poll():
-            bpy.ops.object.mode_set(mode="EDIT", toggle=False)
 
         collection_all_objects: Iterable[Object] = (
             ribbon_mesh.empty_object_collection.all_objects
         )
-        emity_objects: list[Object] = [
-            emity for emity in collection_all_objects if emity.type == "EMPTY"
+        empty_objects: list[Object] = [
+            empty for empty in collection_all_objects if empty.type == "EMPTY"
         ]
 
-        if self.action == GenerateImherentBonesActions.ALL:
-            if not run_result(
-                lambda: self.generate_bones1(
-                    context=context,
-                    active_armature=active_armature,
-                    target_parent_bone_name=ribbon_mesh.target_parent_bone,
-                    emity_objects=emity_objects,
-                    use_cloud_rig=ribbon_mesh.use_cloud_rig,
-                ),
-                self,
-            ):
-                return {"CANCELLED"}
-            if not run_result(
-                lambda: self.generate_bones2(
-                    context=context,
-                    active_armature=active_armature,
-                    emity_objects=emity_objects,
-                    use_cloud_rig=ribbon_mesh.use_cloud_rig,
-                ),
-                self,
-            ):
-                return {"CANCELLED"}
-        elif self.action == GenerateImherentBonesActions.STEP_1:
-            if not run_result(
-                lambda: self.generate_bones1(
-                    context=context,
-                    active_armature=active_armature,
-                    target_parent_bone_name=ribbon_mesh.target_parent_bone,
-                    emity_objects=emity_objects,
-                    use_cloud_rig=ribbon_mesh.use_cloud_rig,
-                ),
-                self,
-            ):
-                return {"CANCELLED"}
-        elif self.action == GenerateImherentBonesActions.STEP_2:
-            if not run_result(
-                lambda: self.generate_bones2(
-                    context=context,
-                    active_armature=active_armature,
-                    emity_objects=emity_objects,
-                    use_cloud_rig=ribbon_mesh.use_cloud_rig,
-                ),
-                self,
-            ):
-                return {"CANCELLED"}
+        def _step_1() -> Result:
+            return self._generate_bones1(
+                context=context,
+                active_armature=active_armature,
+                target_parent_bone_name=ribbon_mesh.target_parent_bone,
+                empty_objects=empty_objects,
+                use_cloud_rig=ribbon_mesh.use_cloud_rig,
+            )
+
+        def _step_2() -> Result:
+            return self._generate_bones2(
+                context=context,
+                active_armature=active_armature,
+                empty_objects=empty_objects,
+                use_cloud_rig=ribbon_mesh.use_cloud_rig,
+            )
+
+        steps: dict[GenerateInherentBonesSteps, tuple] = {
+            GenerateInherentBonesSteps.ALL: (_step_1, _step_2),
+            GenerateInherentBonesSteps.STEP_1: (_step_1,),
+            GenerateInherentBonesSteps.STEP_2: (_step_2),
+        }
+
+        for step in steps[self.action]:
+            if not (result := step()):
+                self.report({"EORRO"}, result.message)
 
         self.report({"INFO"}, "完成")
         return {"FINISHED"}
 
-    def generate_bones1(
+    def _generate_bones1(
         self,
         context: Context,
         active_armature: Object,
         target_parent_bone_name: str,
-        emity_objects: Iterable[Object],
+        empty_objects: Iterable[Object],
         use_cloud_rig: bool = True,
-    ) -> ResultInfo:
+    ) -> Result:
         target_parent_bone: EditBone = active_armature.data.edit_bones[
             target_parent_bone_name
         ]
@@ -179,33 +163,32 @@ class GenerateInherentBonesOperator(Operator):
         # 生成 Micro + MCH
         # ==========================
 
-        def _check_names() -> ResultInfo:
+        def _check_names() -> Result:
             # 检查是否存在同名骨骼，存在提前终止
-            for emity in emity_objects:
-                emity_name: str = name_utils.object_name_to_bone_name(emity.name)
-                micro_bone_name: str = name_utils.replace_start_keywords("", emity_name)
+            for empty in empty_objects:
+                empty_name: str = name_utils.object_name_to_bone_name(empty.name)
+                micro_bone_name: str = name_utils.replace_start_keywords("", empty_name)
                 mch_bone_name: str = name_utils.replace_start_keywords(
-                    "MCH", emity_name
+                    "MCH", empty_name
                 )
                 if micro_bone_name in ebones:
-                    return ResultInfo(
-                        status=False,
-                        message=f"Setp1生成Micro失败：已存在相同名称骨骼：{micro_bone_name}",
+                    return Result(
+                        f"Setp1生成Micro失败：已存在相同名称骨骼：{micro_bone_name}",
                     )
                 if mch_bone_name in ebones:
-                    return ResultInfo(
-                        status=False,
-                        message=f"Setp1生成MCH失败：已存在相同名称骨骼：{mch_bone_name}",
+                    return Result(
+                        f"Setp1生成MCH失败：已存在相同名称骨骼：{mch_bone_name}",
                     )
+            return Result.ok()
 
-        def _init_list_bone_desc() -> ResultInfo[list[BoneDesc]]:
+        def _init_list_bone_desc() -> Result[list[BoneDesc]]:
             list_bone_desc: list[BoneDesc] = []
-            for emity in emity_objects:
-                emity_name: str = name_utils.object_name_to_bone_name(emity.name)
+            for empty in empty_objects:
+                empty_name: str = name_utils.object_name_to_bone_name(empty.name)
                 mch_bone: BoneDesc = BoneDesc(
-                    name=name_utils.replace_start_keywords("MCH", emity_name),
+                    name=name_utils.replace_start_keywords("MCH", empty_name),
                     head=target_parent_bone.head.copy(),
-                    tail=emity.matrix_world.translation.copy(),
+                    tail=empty.matrix_world.translation.copy(),
                     parent=target_parent_bone.name,
                     display_type="STICK",
                     collections=[mch_collection],
@@ -213,16 +196,17 @@ class GenerateInherentBonesOperator(Operator):
                     calculate_roll="GLOBAL_POS_Z",
                 )
                 list_bone_desc.append(mch_bone)
-            for emity in emity_objects:
+            for empty in empty_objects:
                 mch_bone_name: str = name_utils.replace_start_keywords(
-                    "MCH", emity_name
+                    "MCH", empty_name
                 )
                 micro_bone: BoneDesc = BoneDesc(
-                    name=name_utils.replace_start_keywords("", emity_name),
+                    name=name_utils.replace_start_keywords("", empty_name),
                     position_bone_by_name=mch_bone_name,
                     position_bone_location="TAIL",
                     tail_offset=Vector((0.0, 0.0, 0.001)),
                     parent=mch_bone_name,
+                    collections=[micro_collection],
                     bbone_x=0.00035,
                     bbone_z=0.00035,
                     palette="THEME01",
@@ -230,50 +214,52 @@ class GenerateInherentBonesOperator(Operator):
                 )
                 list_bone_desc.append(micro_bone)
 
-            return ResultInfo(data=list_bone_desc)
+            return Result(data=list_bone_desc)
 
-        def _generate(list_bone_desc: list[BoneDesc]) -> ResultInfo:
+        def _generate(list_bone_desc: list[BoneDesc]) -> Result:
             return armature_utils.create_ebone_with_desc(
                 active_armature=active_armature,
                 context=context,
                 list_bone_desc=list_bone_desc,
             )
 
-        def _set_pose_mode(list_bone_desc: list[BoneDesc]) -> ResultInfo:
+        def _set_pose_mode(list_bone_desc: list[BoneDesc]) -> Result:
             return armature_utils.setup_pbone_with_desc(
                 active_armature=active_armature,
                 context=context,
                 list_bone_desc=list_bone_desc,
             )
 
-        def _set_constraint(list_bone_desc: list[BoneDesc]) -> ResultInfo:
+        def _set_constraint(list_bone_desc: list[BoneDesc]) -> Result:
             for bone_desc in list_bone_desc:
                 # constraint: DampedTrackConstraint = mch_pose_bone.constraints.new('STRETCH_TO')
                 # constraint.name = "拉伸到空物体"
-                # constraint.target = emity
+                # constraint.target = empty
                 # constraint.enabled = True
                 pass
 
-        if not (result := run_result(_check_names)):
+        if not (result := _check_names()):
             return result
 
-        result: ResultInfo = run_result(_init_list_bone_desc)
-        if not result:
+        if not (result := _init_list_bone_desc()):
             return result
+
         list_bone_desc: list[BoneDesc] = result.data
 
-        if not (result := run_result(lambda: _generate(list_bone_desc))):
+        if not (result := _generate(list_bone_desc)):
             return result
 
-        if not (result := run_result(lambda: _set_pose_mode(list_bone_desc))):
+        if not (result := _set_pose_mode(list_bone_desc)):
             return result
 
-    def generate_bones2(
+        return Result.ok()
+
+    def _generate_bones2(
         self,
         context: Context,
         active_armature: Object,
         use_cloud_rig: bool = False,
-    ) -> ResultInfo | None:
+    ) -> Result:
         ebones: ArmatureEditBones = active_armature.data.edit_bones
 
         # 创建集合
@@ -287,7 +273,7 @@ class GenerateInherentBonesOperator(Operator):
             armature=active_armature, name=RibbonMeshCollections.MOUTH_RIBBON
         )
 
-        def _check_names() -> ResultInfo:
+        def _check_names() -> Result:
             # 检查是否存在同名骨骼，存在提前终止
             check_names: dict[str, list] = {
                 "Local": [
@@ -307,13 +293,13 @@ class GenerateInherentBonesOperator(Operator):
             ebone_names = [ebone.name for ebone in ebones]
             for key, patterns in check_names.items():
                 for name in ebone_names:
-                    if any(name_utils.match_with_star(p, name) for p in patterns):
-                        return ResultInfo(
-                            status=False,
-                            message=f"Setp2未生成生成：{key}已存在相同名称骨骼：{name}",
+                    if any(name_utils.match_with_wildcard(p, name) for p in patterns):
+                        return Result.fail(
+                            f"Setp2未生成生成：{key}已存在相同名称骨骼：{name}"
                         )
+            return Result.ok()
 
-        def _init_list_bone_desc() -> ResultInfo[list[BoneDesc]]:
+        def _init_list_bone_desc() -> Result[list[BoneDesc]]:
             if context.mode != "EDIT_ARMATURE" and bpy.ops.object.mode_set.poll():
                 bpy.ops.object.mode_set(mode="EDIT", toggle=False)
 
@@ -330,7 +316,7 @@ class GenerateInherentBonesOperator(Operator):
                     base_corn_r_bone,
                 ]
             ):
-                return ResultInfo(status=False, message="Step2 未生成：必要骨骼不全")
+                return Result.fail("Step2 未生成：必要骨骼不全")
 
             # 思路：先生成有位置的部分，这部分比较简单，比如 Middle 和 Corner
             # 然后生成位置相对的部分
@@ -344,45 +330,46 @@ class GenerateInherentBonesOperator(Operator):
                 base_corn_r_bone=base_corn_r_bone,
                 use_cloud_rig=use_cloud_rig,
             )
-            return ResultInfo(data=list_bone_desc)
+            return Result.ok(data=list_bone_desc)
 
-        def _generate(list_bone_desc: list[BoneDesc]) -> ResultInfo:
+        def _generate(list_bone_desc: list[BoneDesc]) -> Result:
             return armature_utils.create_ebone_with_desc(
                 active_armature=active_armature,
                 context=context,
                 list_bone_desc=list_bone_desc,
             )
 
-        def _set_pose_mode(list_bone_desc: list[BoneDesc]) -> ResultInfo:
+        def _set_pose_mode(list_bone_desc: list[BoneDesc]) -> Result:
             return armature_utils.setup_pbone_with_desc(
                 active_armature=active_armature,
                 context=context,
                 list_bone_desc=list_bone_desc,
             )
 
-        def _mirror(list_bone_desc: list[BoneDesc]) -> ResultInfo:
+        def _mirror(list_bone_desc: list[BoneDesc]) -> Result:
             return armature_utils.mirror_ebone_with_desc(
                 active_armature=active_armature,
-                context=context,
                 list_bone_desc=list_bone_desc,
             )
 
-        if not (result := run_result(_check_names)):
+        if not (result := _check_names()):
             return result
 
-        result: ResultInfo = run_result(_init_list_bone_desc)
-        if not result:
+        if not (result := _init_list_bone_desc()):
             return result
+
         list_bone_desc: list[BoneDesc] = result.data
 
-        if not (result := run_result(lambda: _generate(list_bone_desc))):
+        if not (result := _generate(list_bone_desc)):
             return result
 
-        if not (result := run_result(lambda: _set_pose_mode(list_bone_desc))):
+        if not (result := _set_pose_mode(list_bone_desc)):
             return result
 
-        if not (result := run_result(lambda: _mirror(list_bone_desc))):
+        if not (result := _mirror(list_bone_desc)):
             return result
+
+        return result.ok()
 
 
 registry: list = [GenerateInherentBonesOperator]
