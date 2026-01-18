@@ -26,17 +26,17 @@ if not hasattr(typing, "override"):
 from bpy.utils import register_class, unregister_class
 
 from . import properties
-from .developer import (
+from .modules.developer import (
     ops_reload,
     ui_developer,
 )
-from .general.drivers import (
+from .modules.general import ui_general_main
+from .modules.general.drivers import (
     ops_drivers,
     props_scene_drivers,
     ui_drivers,
 )
-from .general.main import ui_general_main
-from .general.phys import (
+from .modules.general.phys import (
     menu_cloth_preset,
     ops_generate_vg,
     ops_phys_constraints,
@@ -45,24 +45,24 @@ from .general.phys import (
     props_scene_phys,
     ui_phys,
 )
-from .general.prints import (
+from .modules.general.prints import (
     ops_print_selected_bones,
     ops_print_shape_keys,
     ops_print_unlock_vg,
     ops_print_visible_bones,
     ui_prints,
 )
-from .general.ribbon_mesh import (
+from .modules.general.ribbon_mesh import (
     ops_generate_empty_objects,
     ops_generate_inherent_bones,
     props_scene_ribbon_mesh,
     ui_ribbon_mesh,
 )
-from .general.scripts import (
+from .modules.general.scripts import (
     ops_scripts,
     ui_scripts,
 )
-from .general.toolset import (
+from .modules.general.toolset import (
     ops_align_bones,
     ops_expression_generator,
     ops_load_bone_collections,
@@ -70,35 +70,35 @@ from .general.toolset import (
     ops_select_filter_vg,
     props_scene_toolset,
 )
-from .ow import props_scene_ow
-from .ow.main import (
+from .modules.ow import (
     ops_action_match_ow,
     ops_print_unnamed_ow_bone,
     ops_rename_ow_bone,
+    props_scene_ow,
     ui_ow_main,
 )
-from .ow.transform_action import (
+from .modules.ow.transform_action import (
     ops_bake_action,
     ops_constraint_ow2rig,
     ops_unconstraint_ow2rig,
     props_scene_ow_transform_action,
     ui_ow_transform_action,
 )
-from .ow.vertex_group import (
+from .modules.ow.vertex_group import (
     ops_copy_ow2rig_vg,
     ops_lock_ow2rig_vg,
     ops_remove_ow2rig_vg,
     ops_rename_ow_vg,
     ui_ow_vertex_group,
 )
-from .public import ops_refresh_frame, props_scene_public
-from .rig import (
+from .modules.rig import (
     ops_generate,
     props_object_meld_rig,
     props_pose_bone_meld_rig,
     ui_meld_rig,
     ui_meld_rig_pose_bone,
 )
+from .public import ops_refresh_frame, props_scene_public
 
 ADDON_ROOT = os.path.dirname(os.path.realpath(__file__))
 

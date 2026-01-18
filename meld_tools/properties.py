@@ -3,19 +3,19 @@ from bpy.app.handlers import persistent
 from bpy.props import PointerProperty, StringProperty
 from bpy.types import Object, PropertyGroup, Text
 
-from .general.drivers.props_scene_drivers import DriversSceneProperties
-from .general.phys.props_scene_phys import PhysSceneProperties
-from .general.ribbon_mesh.props_scene_ribbon_mesh import (
+from .modules.general.drivers.props_scene_drivers import DriversSceneProperties
+from .modules.general.phys.props_scene_phys import PhysSceneProperties
+from .modules.general.ribbon_mesh.props_scene_ribbon_mesh import (
     RibbonMeshSceneProperties,
 )
-from .general.toolset.props_scene_toolset import ToolsetSceneProperties
-from .ow.props_scene_ow import OWSceneProperties
-from .ow.transform_action.props_scene_ow_transform_action import (
+from .modules.general.toolset.props_scene_toolset import ToolsetSceneProperties
+from .modules.ow.props_scene_ow import OWSceneProperties
+from .modules.ow.transform_action.props_scene_ow_transform_action import (
     OWTransfromActionSceneProperties,
 )
+from .modules.rig.props_object_meld_rig import MeldRigObjectProperties
+from .modules.rig.props_pose_bone_meld_rig import MeldRigPoseBoneProperties
 from .public.props_scene_public import PublicSceneProperties
-from .rig.props_object_meld_rig import MeldRigObjectProperties
-from .rig.props_pose_bone_meld_rig import MeldRigPoseBoneProperties
 
 
 class MeldToolObjectProperties(PropertyGroup):

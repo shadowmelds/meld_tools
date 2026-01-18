@@ -1,0 +1,3 @@
+[submodule "meld_tools/bs_utils"]
+	path = meld_tools/bs_utils
+	url = https://projects.blender.org/Mets/blender_studio_utils.git
