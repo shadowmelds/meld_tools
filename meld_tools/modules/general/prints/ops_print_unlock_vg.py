@@ -3,6 +3,7 @@ from typing import override
 from bpy.types import Context, Object
 
 from ....shared.base.base_operator import BaseOperator
+from ....shared.utils.logger import log_report
 
 
 class PrintUnlockVGOperator(BaseOperator):
@@ -28,13 +29,13 @@ class PrintUnlockVGOperator(BaseOperator):
             self,
         ):
             return {"CANCELLED"}
+
         count: int = 0
         for vertex_group in active_object.vertex_groups:
             if not vertex_group.lock_weight:
                 count += 1
                 print('"' + vertex_group.name + '",')
-
-        self.report({"INFO"}, f"已打印 {count} 条")
+        log_report(self, {"INFO"}, f"已打印 {count} 条")
         return {"FINISHED"}
 
 

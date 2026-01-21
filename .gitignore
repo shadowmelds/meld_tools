@@ -8,12 +8,14 @@
 .idea/
 .VSCodeCounter/
 .obsidian/
+.logs/
 
 *.blend1
 *.blend2
 *.blend3
 *.blend@
 *.crash.txt
+_meld*
 
 typing_extensions-4.15.0.dist-info/
 

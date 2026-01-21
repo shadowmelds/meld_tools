@@ -1,7 +1,7 @@
 
 ### 这是什么
 
-个人 blender 插件，用于学习、实现更方便工作流。
+个人用于学习、实现更方便工作流的 blender 插件
 
 ### 安装插件
 
@@ -15,7 +15,7 @@ git clone --recurse-submodules https://github.com/shadowmelds/meld_tools.git
 插件符号链接地址：
 
 ```
-~\AppData\Roaming\Blender Foundation\Blender\5.0\scripts\addons
+~\AppData\Roaming\Blender Foundation\Blender\5.0\extensions\user_default
 ```
 
 ### 学习资料参考
@@ -66,49 +66,39 @@ pytest -v --durations=0 --cov=./meld_tools --cov-report=html --cov-branch
 通过`htmlcov/index.html`在网页浏览器中打开文件来查看覆盖率统计信息
 
 
-### 代办列表
+### 代办
 
 1. 目前所有骨架生成或修改的ops都是直接对目标骨架修改而且出错直接终止，没有撤销的操作；将骨架修改的流程改用临时骨架替换原始骨架的方式而不是直接在原始骨架上修改
+2. 自制一套人体命名映射，兼容 CloudRig、OW、未来的任何人形 Rig
 
+### 组织
 
 ```
-meld_tools
-├─ meld_tools
-│  ├─ __init__.py                # 核心引擎：仅负责扫描 modules 文件夹并自动挂载
-│  ├─ blender_manifest.toml
-│  ├─ core/                      # 【核心层】禁止任何业务关键词（无 ow, 无 rig）
-│  │  ├─ base/                   # 抽象基类 (BaseOperator, BasePanel)
-│  │  ├─ path.py                 # 动态寻址引擎
-│  │  └─ registration.py         # 自动注册工厂 (Auto-Register)
-│  ├─ shared/                    # 【共享层】跨模块复用的原子逻辑
-│  │  ├─ math/                   # 纯数学计算
-│  │  ├─ blender/                # 封装 bpy 的工具类 (mesh, arm, bone)
-│  │  └─ models/                 # 通用协议 (Result, BoneInfo)
-│  ├─ modules/                   # 【领域层】每个子目录都是一个完整的微型插件
-│  │  ├─ ow/                     # Overwatch 领域 (高度内聚自治)
-│  │  │  ├─ __init__.py          # 导出入口
-│  │  │  ├─ data/                # 资源与静态配置 (Skin scripts, Enums)
-│  │  │  ├─ main/                # 核心逻辑
-│  │  │  │  ├─ ops.py
-│  │  │  │  └─ ui.py
-│  │  │  ├─ transform/           # 变换逻辑
-│  │  │  │  ├─ ops.py
-│  │  │  │  ├─ props.py
-│  │  │  │  └─ ui.py
-│  │  │  └─ vgroup/              # 顶点组逻辑
-│  │  │     ├─ ops.py
-│  │  │     └─ ui.py
-│  │  ├─ rig/                    # Rigging 领域
-│  │  │  ├─ data/                # Rig 预设与配置文件
-│  │  │  ├─ core_logic.py        # 核心算法
-│  │  │  ├─ ops.py
-│  │  │  ├─ props.py
-│  │  │  └─ ui.py
-│  │  └─ general/                # 通用工具领域
-│  │     ├─ phys/                # 物理工具包 (ops, props, ui, data)
-│  │     ├─ ribbon/              # 缎带工具包 (ops, props, ui, data)
-│  │     └─ toolset/             # 杂项工具包
-│  ├─ developer/                 # 开发环境扩展
-│  └─ public/                    # 插件级全局状态
-└─ ... (外部配置如 clean_cache.ps1, test 等)
+meld_tools                      仓库根目录
+├─ meld_tools                   插件根目录
+│  ├─ blender_manifest.toml     插件描述文件
+│  ├─ bs_utils                  来自 Blender 的 blender_studio_utils
+│  ├─ modules                   各种功能的 ops、ui、props 等等
+│  │  ├─ developer              重载插件快捷按钮
+│  │  ├─ general                常规功能
+│  │  │  ├─ drivers             驱动器复制器
+│  │  │  ├─ phys                物理模拟物体生成和绑定
+│  │  │  ├─ prints              打印各种信息到控制台
+│  │  │  ├─ ribbon_mesh         角色脸部丝带绑定
+│  │  │  ├─ scripts             向 .blend 文件写入脚本
+│  │  │  ├─ toolset             工具集
+│  │  ├─ ow                     守望先锋相关（大都是绑定）
+│  │  │  ├─ transform_action    匹配的骨架可进行动作转移
+│  │  │  ├─ vertex_group        顶点组、权重、骨架命名
+│  │  └─ rig                    尝试实现自己的绑定插件（未来计划）
+│  ├─ public                    多处使用的共享 ops
+│  ├─ shared                    公共工具、数据结构
+│  │  ├─ base                   基类
+│  │  ├─ data                   公共数据
+│  │  │  ├─ scripts             脚本
+│  │  ├─ models                 数据结构
+│  │  └─ utils                  工具
+├─ notes                        项目笔记
+└─ test                         测试
+   └─ test.blend                测试 Blender 文件
 ```

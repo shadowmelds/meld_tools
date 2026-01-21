@@ -8,6 +8,11 @@ from bpy.types import Context, Scene
 from .install import disable_this, install_this
 
 
+def pytest_configure() -> None:
+    log_file = Path(__file__).parent / Path("test.log")
+    log_file.write_text("")  # 每次运行前清空文件
+
+
 @pytest.fixture(scope="session")
 def install_addon() -> Generator[None, Any, None]:
     install_this(bpy.context)
