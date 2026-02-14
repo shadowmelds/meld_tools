@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context, Panel, UILayout
 
 from ....panel import MainPanel
@@ -15,7 +13,6 @@ class PrintsPanel(MainPanel, Panel):
     bl_parent_id: str = "MELDTOOL_PT_general_main"
     bl_options: set = {"DEFAULT_CLOSED"}
 
-    @override
     def draw(self, context: Context) -> None:
         column: UILayout = self.layout.column()
         column1: UILayout = column.column(align=True)

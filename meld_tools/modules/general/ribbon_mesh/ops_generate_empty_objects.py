@@ -1,5 +1,3 @@
-from typing import override
-
 import bmesh
 import bpy
 import mathutils
@@ -19,7 +17,6 @@ class GenerateEmptyObjectsOperator(BaseOperator):
     bl_description: str = "选中的每个顶点生成空物体并作为顶点子级"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         ribbon_mesh: RibbonMeshSceneProperties = (
             context.scene.meldtool_scene_properties.ribbon_mesh
@@ -30,7 +27,6 @@ class GenerateEmptyObjectsOperator(BaseOperator):
             bool(ribbon_mesh.empty_object_collection), "未选择空物体存放集合"
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object = context.active_object
         ribbon_mesh: RibbonMeshSceneProperties = (

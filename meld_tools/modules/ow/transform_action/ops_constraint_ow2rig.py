@@ -1,13 +1,10 @@
-from typing import override
-
 import bpy
 from bpy.types import Context, Object
 
-from .._utils import skin_data
-
 from ....shared.base.base_operator import BaseOperator
-from ....shared.models.enums_ow_skin import OWSkin
 from ....shared.utils import transform_action_utils
+from .._data import skin_data
+from .._models.enums_ow_skin import OWSkin
 from .props_scene_ow_transform_action import OWTransfromActionSceneProperties
 
 
@@ -16,7 +13,6 @@ class ConstraintOW2RigOperator(BaseOperator):
     bl_label: str = "约束绑定骨骼至原始动画骨骼"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         ow_transform_action: OWTransfromActionSceneProperties = (
             context.scene.meldtool_scene_properties.ow_transform_action  # type: ignore
@@ -27,7 +23,6 @@ class ConstraintOW2RigOperator(BaseOperator):
             "ow骨架和绑定骨架不能是同一个骨架",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         ow_transform_action: OWTransfromActionSceneProperties = (
             context.scene.meldtool_scene_properties.ow_transform_action  # type: ignore

@@ -10,20 +10,19 @@ class Human:
     part: HumanPart | None = None
     base_name: str | None = None
     position: Literal[
-        "upper",
-        "lower",
+        "top",
+        "bottom",
         "middle",
         "corner",
         "inner",
         "outer",
-        "tip",
         "NONE",
     ] = "NONE"
     index: int = -1
     side: Literal["L", "R", "NONE"] = "NONE"
 
     def get_name(self) -> str:
-        name: str
+        name: str = ""
 
         if self.base_name:
             name = self.base_name
@@ -78,15 +77,19 @@ class HumanPart(StrEnum):
     TONGUE = "tongue"
     EAR = "ear"  # 耳朵
 
+    ORBIT_UPPER = "orbit_upper"  # 眼眶上
     EYEBROW = "eyebrow"  # 眉
-    EYELID = "eyelid"  # 眼皮
-    CHEEK_UPPER = "cheek_upper"  # 脸颊上
+    EYELID = "eyelid_upper"  # 眼皮
+    EYELID_UPPER = "eyelid_upper"  # 上眼皮
+    EYELID_LOWER = "eyelid_lower"  # 下眼皮
+    EYELASH = "eyelash"
     CHEEK = "cheek"  # 脸颊
+    CHEEK_UPPER = "cheek_upper"  # 脸颊上
     CHEEK_LOWER = "laugh_lower"  # 脸颊下，法令纹
     NOSE = "nose"  # 鼻子
     NOSE_BRIEGE = "nose_bridge"  # 鼻子
-    LIP_UPPER = "lip_upper"  # 上嘴唇
     LIP = "lip"  # 嘴唇
+    LIP_UPPER = "lip_upper"  # 上嘴唇
     LIP_LOWER = "lip_lower"  # 下嘴唇
     CHIN = "chin"  # 颌
     JAW = "jaw"  # 颌

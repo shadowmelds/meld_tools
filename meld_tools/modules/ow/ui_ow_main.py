@@ -1,13 +1,11 @@
-from typing import override
-
 from bpy.types import Context, Panel, UILayout
 
-from ...shared.models.enums_ow_skin import OWSkin
 from ...panel import MainPanel
-from .props_scene_ow import OWSceneProperties
+from ._models.enums_ow_skin import OWSkin
 from .ops_action_match_ow import ActionMatchOWOperator
 from .ops_print_unnamed_ow_bone import PrintUnnamedOWBonesOperator
 from .ops_rename_ow_bone import RenameOWBonesOperator
+from .props_scene_ow import OWSceneProperties
 
 
 class OWMainPanel(MainPanel, Panel):
@@ -15,7 +13,6 @@ class OWMainPanel(MainPanel, Panel):
     bl_label: str = "守望先锋"
     bl_options: set = {"DEFAULT_CLOSED"}
 
-    @override
     def draw(self, context: Context) -> None:
         ow_props: OWSceneProperties = context.scene.meldtool_scene_properties.ow  # type: ignore
         column1: UILayout = self.layout.column()

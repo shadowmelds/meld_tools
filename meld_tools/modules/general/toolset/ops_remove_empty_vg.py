@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context, Object
 
 from ....shared.base.base_operator import BaseOperator
@@ -12,11 +10,9 @@ class RemoveEmptyVGOperator(BaseOperator):
     bl_description: str = "移除选中物体的所有空顶点组"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_active_object_mesh(context.object)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object | None = context.active_object
         if self.validate_active_object_mesh(active_object, self):

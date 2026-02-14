@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import (
     Context,
     Object,
@@ -14,11 +12,9 @@ class PrintSelectedBonesOperator(BaseOperator):
     bl_description: str = "打印选中骨骼名到控制台"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_armature_pose_edit(context)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object = context.active_object
         if self.validate_armature_pose_edit(context, active_armature, self):

@@ -5,29 +5,26 @@ import typing
 from typing import Any, Callable
 
 # 1. 检查当前环境是否缺少 override
-if not hasattr(typing, "override"):
-    # 2. 定位插件自带的 typing_extensions.py
-    current_dir = os.path.dirname(__file__)
-    if current_dir not in sys.path:
-        sys.path.insert(0, current_dir)  # 插入到最前面确保优先加载
-
-    try:
-        from .typing_extensions import override
-
-        # 3. 动态注入到全局 typing 模块中
-        typing.override = override
-    except ImportError:
-        # 4. 万一没找到文件，定义一个不起作用的装饰器作为保底
-        def override(func: Callable) -> Callable[..., Any]:
-            return func
-
-        typing.override = override
-
+# if not hasattr(typing, "override"):
+#     # 2. 定位插件自带的 typing_extensions.py
+#     current_dir = os.path.dirname(__file__)
+#     if current_dir not in sys.path:
+#         sys.path.insert(0, current_dir)  # 插入到最前面确保优先加载
+#     try:
+#         from .typing_extensions import override
+#         # 3. 动态注入到全局 typing 模块中
+#         typing.override = override
+#     except ImportError:
+#         # 4. 万一没找到文件，定义一个不起作用的装饰器作为保底
+#         def override(func: Callable) -> Callable[..., Any]:
+#             return func
+#         typing.override = override
 from bpy.utils import register_class, unregister_class
 
 from . import properties
 from .modules.developer import (
     ops_reload,
+    ops_workflow_test,
     ui_developer,
 )
 from .modules.general import ui_general_main
@@ -156,6 +153,7 @@ modules: list = [
     ops_unconstraint_ow2rig,
     # developer.main
     ops_reload,
+    ops_workflow_test,
     # rig
     ops_generate,
     # panels

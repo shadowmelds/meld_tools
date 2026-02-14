@@ -1,4 +1,4 @@
-from typing import Any, Callable, override
+from typing import Any, Callable
 
 from bpy.types import (
     Context,
@@ -33,11 +33,9 @@ class RenameBonesOperator(BaseOperator):
             self._rename_sequence(child, callback)
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_armature_pose_edit(context)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         """在 Eidt Pose 模式下命名连续骨骼
         1_1.L -> 1_2.L -> 1_3.L

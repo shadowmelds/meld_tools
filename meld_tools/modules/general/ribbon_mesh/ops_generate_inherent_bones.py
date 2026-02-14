@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Iterable, Literal, override
+from typing import Iterable, Literal
 
 import bpy
 from bpy.props import (
@@ -17,11 +17,11 @@ from bpy.types import (
 from mathutils import Vector
 
 from ....shared.base.base_operator import BaseOperator
-from ._data import ribbon_mesh
 from ....shared.models.bone_desc import BoneDesc
 from ....shared.models.result import Result
 from ....shared.utils import armature_utils, name_utils
 from ....shared.utils.object_utils import is_transform_applied
+from ._data import ribbon_mesh
 from .props_scene_ribbon_mesh import RibbonMeshSceneProperties
 
 
@@ -56,7 +56,6 @@ class GenerateInherentBonesOperator(BaseOperator):
 
     message: StringProperty(default="确保空物体集合内仅包含本次绑定的丝带所需的空物体")
 
-    @override
     def invoke(
         self, context: Context, event: Event
     ) -> set[
@@ -64,13 +63,11 @@ class GenerateInherentBonesOperator(BaseOperator):
     ]:
         return context.window_manager.invoke_props_dialog(self)
 
-    @override
     def draw(self, context: Context) -> None:
         layout: UILayout = self.layout
         layout.label(text=self.message)
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         ribbon_mesh: RibbonMeshSceneProperties = (
             context.scene.meldtool_scene_properties.ribbon_mesh
@@ -85,7 +82,6 @@ class GenerateInherentBonesOperator(BaseOperator):
             and cls.validate(bool(ribbon_mesh.target_parent_bone), "请设置目标父骨骼")
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object = context.active_object
         if self.validate_armature_edit(context, active_armature, self):

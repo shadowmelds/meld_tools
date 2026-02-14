@@ -88,6 +88,7 @@ class BaseOperator(Operator):
         operator_instance: Operator | None = None,
         strict_mode: bool = False,
     ) -> bool:
+        """验证骨架是否处于 Pose 模式"""
         active_object: Object | None = object or context.active_object
         is_armature: bool = (
             active_object is not None

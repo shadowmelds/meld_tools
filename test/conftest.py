@@ -44,6 +44,18 @@ def scene_ribbon_mesh(context_blend: Context) -> Callable[..., Scene | None]:
     )
 
 
+@pytest.fixture
+def scene_ow(context_blend: Context) -> Callable[..., Scene | None]:
+    return lambda obj_name: select_scene_and_object(context_blend, "OW", obj_name)
+
+
+@pytest.fixture
+def scene_revise_workflow(context_blend: Context) -> Callable[..., Scene | None]:
+    return lambda obj_name: select_scene_and_object(
+        context_blend, "revise_workflow", obj_name
+    )
+
+
 def select_scene_and_object(
     context: Context, scene_name: str, obj_name: str = None
 ) -> Scene | None:

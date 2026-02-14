@@ -1,4 +1,4 @@
-from typing import Callable, override
+from typing import Callable
 
 from bpy.types import (
     Context,
@@ -47,7 +47,6 @@ class CopyLocationOperator(BaseOperator):
             self._create_phys_copy_location_constraint(target_object, child, callback)
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         """活动物体为骨架并且在姿态模式 & 存在目标模拟网格"""
         return cls.validate_armature_pose(context) and cls.validate(
@@ -55,7 +54,6 @@ class CopyLocationOperator(BaseOperator):
             "未选择目标模拟网格",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         target_object: Object | None = (
@@ -118,7 +116,6 @@ class DampedTrackOperator(BaseOperator):
             self._create_phys_damped_track_constraint(target_object, child, callback)
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         """活动物体为骨架并且在姿态模式 & 存在目标模拟网格"""
         return cls.validate_armature_pose(context) and cls.validate(
@@ -126,7 +123,6 @@ class DampedTrackOperator(BaseOperator):
             "未选择目标模拟网格",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         target_object: Object | None = (

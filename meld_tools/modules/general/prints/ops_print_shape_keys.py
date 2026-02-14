@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import (
     Context,
     Object,
@@ -14,7 +12,6 @@ class PrintShapeKeysOperator(BaseOperator):
     bl_description: str = "打印全部形态键到控制台"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         active_object: Object = context.active_object
         return cls.validate(
@@ -22,7 +19,6 @@ class PrintShapeKeysOperator(BaseOperator):
             "活动物体不是网格物体",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object = context.active_object
         if self.validate(

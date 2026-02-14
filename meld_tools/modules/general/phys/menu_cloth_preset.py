@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.props import EnumProperty
 from bpy.types import ClothModifier, Context, Menu, Object, UILayout
 
@@ -26,7 +24,6 @@ class ClothPresetMenu(Menu):
     bl_label = "布料预设"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         selected_objects: list[Object] = context.selected_objects
         for select_obj in selected_objects:
@@ -34,7 +31,6 @@ class ClothPresetMenu(Menu):
                 return False
         return True
 
-    @override
     def draw(self, context: Context) -> None:
         layout: UILayout = self.layout
 
@@ -87,7 +83,6 @@ class ApplayClothPresetOperator(BaseOperator):
     )
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         """不允许选中任何非网格物体"""
         selected_objects: list[Object] = context.selected_objects
@@ -96,7 +91,6 @@ class ApplayClothPresetOperator(BaseOperator):
             "不允许选中任何非网格物体",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         """应用布料预设"""
         selected_objects: list[Object] = context.selected_objects

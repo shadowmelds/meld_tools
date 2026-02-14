@@ -1,14 +1,13 @@
 # my_addon/log.py
-import logging
 import typing
+from logging import Logger
 
 from bpy.types import Operator
-
-logger: logging.Logger = logging.getLogger("meld_toos")
 
 
 def log_report(
     operator: Operator,
+    logger: Logger,
     type: set[
         typing.Literal[
             "DEBUG",  # Debug.

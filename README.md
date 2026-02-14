@@ -10,12 +10,15 @@
 git clone --recurse-submodules https://github.com/shadowmelds/meld_tools.git
 ```
 
-符号链接工具：[Link Shell Extension](https://schinagl.priv.at/nt/hardlinkshellext/hardlinkshellext.html)
+Windows 符号链接工具：[Link Shell Extension](https://schinagl.priv.at/nt/hardlinkshellext/hardlinkshellext.html)
 
 插件符号链接地址：
 
 ```
+# Windows:
 ~\AppData\Roaming\Blender Foundation\Blender\5.0\extensions\user_default
+# Linux:
+~/.config/blender/5.0/extensions/user_default
 ```
 
 ### 学习资料参考

@@ -1,5 +1,3 @@
-from typing import override
-
 import bpy
 from bpy.types import Context, Object
 
@@ -13,14 +11,12 @@ class SelectFilterVGOperator(BaseOperator):
     bl_description: str = "选中所有包含关键字的顶点组，执行自动切换至编辑模式"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate(
             bool(context.object.meldtool_object_properties.include_keyword),  # type: ignore
             "没有设置关键字",
         ) and cls.validate_active_object_mesh(context.active_object)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object = context.active_object
         str_filter: str = context.object.meldtool_object_properties.include_keyword  # type: ignore

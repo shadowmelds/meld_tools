@@ -1,5 +1,3 @@
-from typing import override
-
 import bpy
 from bpy.types import (
     Context,
@@ -27,11 +25,9 @@ class CreateCurveOperator(BaseOperator):
     bl_description: str = "创建物理曲线，为转换为网格做准备"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_armature_pose_edit(context)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         if self.validate_armature_pose_edit(context, active_armature, self):
@@ -88,7 +84,6 @@ class ConvertMeshOperator(BaseOperator):
     bl_description: str = "物理模拟曲线转换为网格并根据活动骨架的活动骨骼链生成顶点组"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         active_object: Object | None = context.active_object
         selected_objects: list[Object] = context.selected_objects
@@ -105,7 +100,6 @@ class ConvertMeshOperator(BaseOperator):
             )
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         selected_objects: list[Object] = context.selected_objects
@@ -199,11 +193,9 @@ class MergeMeshsOperator(BaseOperator):
     bl_description: str = "合并所有物理网格"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return True
 
-    @override
     def execute(self, context: Context) -> set[str]:
         return {"FINISHED"}
 

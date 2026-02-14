@@ -1,10 +1,8 @@
-from typing import override
-
 from bpy.types import Context, Object
 
 from ....shared.base.base_operator import BaseOperator
-from ....shared.models.enums_ow_skin import OWSkin
-from .._utils import skin_data
+from .._data import skin_data
+from .._models.enums_ow_skin import OWSkin
 
 
 class LockOW2RigVGOperator(BaseOperator):
@@ -14,18 +12,16 @@ class LockOW2RigVGOperator(BaseOperator):
     bl_description: str = "锁定从守望先锋顶点组复制的绑定顶点组"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         # 仅当有选中网格物体且物体未隐藏时，面板才可见
         return cls.validate_active_object_mesh(context.active_object)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object = context.active_object
         processed_number: int = 0
 
         skin: OWSkin = OWSkin(
-            context.scene.meldtool_scene_properties.ow_main.current_skin  # type: ignore
+            context.scene.meldtool_scene_properties.ow.current_skin  # type: ignore
         )
         skin_vertex_group: set = skin_data.get_skin_vertex_group(skin)
 
@@ -45,18 +41,16 @@ class UnlockOW2RigVGOperator(BaseOperator):
     bl_description: str = "取消锁定从守望先锋顶点组复制的绑定顶点组"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         # 仅当有选中网格物体且物体未隐藏时，面板才可见
         return cls.validate_active_object_mesh(context.active_object)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object = context.active_object
         processed_number: int = 0
 
         skin: OWSkin = OWSkin(
-            context.scene.meldtool_scene_properties.ow_main.current_skin  # type: ignore
+            context.scene.meldtool_scene_properties.ow.current_skin  # type: ignore
         )
         skin_vertex_group: set = skin_data.get_skin_vertex_group(skin)
 

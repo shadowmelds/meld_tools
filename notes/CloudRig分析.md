@@ -83,6 +83,125 @@ pytest -v --durations=0 --cov=./CloudRig --cov-report=html --cov-branch
 
 我很好奇 CloudRig 如果重新生成失败时骨架是如何保证不会破坏现有骨架，而生成成功如何保持骨架所有约束、驱动器、之类的不被破坏的？
 
+```python
+# cloud_generator.py
+
+class CloudRig_Generator():
+    def generate(self, context):
+        # 第一步处理 metarig
+        metarig.data.pose_position = "REST"  # 让 metarig 处于静止姿态
+        metarig.matrix_world = Matrix.Identity(4)  # 归零世界坐标上的变换
+        context.view_layer.update()  # 刷新视图 （可能不需要了）
+
+        # 检查 metarig 的版本是否是比目前插件更新版本的 CloudRig 生成的，如果是则需要先更新插件
+        if self.params.metarig_version > current_metarig_version:
+            ...
+        # 临时存储驱动器 ？？？
+        self.driver_map = map_pbones_to_drivers(self.metarig)
+        # 创建目标骨架
+        self.target_rig = create_target_rig_obj(context, metarig)
+        # root 意外情况的处理
+        if self.params.ensure_root:
+            # 如果没有 root 骨骼会自动为 metarig 生成 root 骨骼
+            self.ensure_root_bone_component(context, self.metarig, self.params.ensure_root)
+            # 这里应该是直接修改了 metarig 给 “孤儿骨骼” 的父级自动设置为 root 骨骼？
+            parent_orphans(metarig, self.params.ensure_root)
+
+        # 通过实例化传入的姿势骨骼的绑定组件来生成虚拟骨骼，
+        # 并调用它们的 create_bone_infos() 函数。
+        # 注意：几乎可以在任何上下文中调用此函数！
+        # 这是有意为之，因为叠加绘制代码会用到它！ 叠加绘制代码是 ？？？
+        self.generate_abstraction_layer(context)
+        # 将新骨架设置为活动物体
+        focus_select_obj(context, self.target_rig)
+        # 开始修改骨架
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # 一旦所有骨骼组件都创建了它们的骨骼信息（BoneInfos），我们就可以安全地
+        # 创建组件之间的关系，因为所有骨骼都已存在。
+        # 将此步骤单独设置非常重要，因为它可以实现宽松灵活的
+        # 父级切换系统，允许用户选择任何骨骼作为父级。
+        self.components_create_interactions(context)
+
+        # 如果一个骨骼没有任何父级信息（孤儿）那么父级会被自动设置为 root
+        if self.root_bone_info:
+            self.parent_orphan_bone_infos_to_root()
+
+        # 从所有 BoneInfo 中创建实际骨骼。
+        # 除了名称之外，尚未写入任何骨骼数据。
+        # 此函数应在 components_write_ebone_data() 之前调用，
+        # 这样就可以在设置父级时无需担心创建顺序。
+        self.components_create_real_bones()
+
+        # 为 BoneInfos 写入 EditBone 数据，此函数不会创建 EditBone
+        # 创建 EditBone 由 components_create_real_bones() 完成
+        # 这样就可以在进行父子关系设置时无需担心顺序问题
+        self.components_write_ebone_data()
+
+        # 设置物体模式下的操作
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        # 创建组建的辅助物体（网格、曲线、晶格）
+        self.components_create_helper_objs(context)
+        # 应该是写入 PoseBone 的数据，但没看懂写入了什么
+        self.components_write_pbone_data(context, self.target_rig)
+        
+        # 生成测试动作（如果需要）
+        if self.params.generate_test_action:
+            self.components_create_test_animation()
+
+        # 这个应该是 action 约束相关的 ？？？
+        if self.params.action_setups:
+            ...
+        # 加载并执行 cloudrig.py UI 脚本
+        ensure_cloudrig_ui(self.target_rig)
+
+        # 骨骼控件集合重新加载 ？？？ 应该是创建自定义的形状会收纳进专门的集合等操作
+        if self.params.reload_widgets and self.params.widget_collection:
+            for obj in self.params.widget_collection.objects:
+                if not obj.name.startswith("WGT-"):
+                    # This is a custom widget and it's not even following naming convention, so we're
+                    # not gonna be able to reload it anyways.
+                    continue
+                self.ensure_widget(
+                    context, obj.name.replace("WGT-", ""), overwrite=True
+                )
+
+        # 不理解它的作用（实验性功能）
+        if self.params.auto_setup_gizmos and self.use_gizmos:
+            ...
+
+        # 已经存在的旧的目标骨架
+        old_rig = self.params.target_rig
+        # 执行用户自定义脚本
+        self.execute_custom_script(context, old_rig, self.target_rig)
+
+        if old_rig:
+            # 如果旧的目标骨架存在则替换为新骨架
+            self.replace_old_with_new_rig(
+                context,
+                old_rig=old_rig,
+                new_rig=self.target_rig,
+            )
+        else:
+            # 如果没有旧的目标骨架，则新骨架去掉标识前缀直接成为新骨架
+            self.target_rig.name = self.target_rig.name.replace("NEW-", "")
+
+        # 记录警告级别的问题
+        self.log_minor_issues()
+
+        # 旧的目标骨架被设置为新生成的骨架，以便下次重新生成
+        self.params.target_rig = self.target_rig
+        self.target_rig.data.name = self.target_rig.name
+
+        # 在生成成功或失败后恢复变换
+        self.restore_rig_states(context)
+
+    def create_target_rig_obj(context, metarig) -> Object:
+        ...
+
+```
+
 - `cloud_generator.py/replace_old_with_new_rig()` 预先保存旧 rig 中的信息 然后删除它 并重映射到新 rig
 
 

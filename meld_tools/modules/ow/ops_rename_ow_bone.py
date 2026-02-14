@@ -1,62 +1,129 @@
-from typing import Callable, override
+import logging
+from logging import Logger
 
 from bpy.types import ArmatureBones, Bone, BoneCollection, Context, Object
 
-from ._utils import skin_data
-
+from ...BoneUtil import getBoneName
 from ...shared.base.base_operator import BaseOperator
-from ...shared.models.enums_ow_bone_collection import OWBoneCollection
-from ...shared.models.enums_ow_skin import OWSkin
+from ...shared.models.result import Result
 from ...shared.utils import armature_utils
+from ...shared.utils.armature_utils import get_bone_collection
+from ._data.skin_data import get_bones_with_collection
+from ._models.collection_bones import CollectionBones
+from ._models.enums_ow_bone_collection import OWBoneCollection
+from ._models.enums_ow_skin import OWSkin
 
 
 class RenameOWBonesOperator(BaseOperator):
     bl_idname: str = "meldtool.rename_ow_bones"
-    bl_label: str = "为所有骨骼重命名"
+    bl_label: str = "为守望先锋骨骼重命名"
     bl_options: set = {"REGISTER", "UNDO"}
-    bl_description: str = "将守望先锋骨骼名改为具有可读性的名称，这依赖于插件内的记录"
+    bl_description: str = (
+        "将守望先锋骨骼名改为具有可读性的名称，并且整理进骨骼集合，这依赖于插件内的记录"
+    )
+
+    logger: Logger = logging.getLogger()
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
-        # 活动物体为骨架时才可用，否则处于不可用状态（按钮为灰色）
         return cls.validate_armature_pose(context)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object = context.active_object
 
         if self.validate_armature_pose(context, active_armature, self):
             return {"CANCELLED"}
 
-        current_skin: OWSkin = OWSkin(
-            context.scene.meldtool_scene_properties.ow_main.current_skin  # type: ignore
+        skin: OWSkin = OWSkin(
+            context.scene.meldtool_scene_properties.ow.current_skin  # type: ignore
         )
-        success_num: int = 0
-        named_num: int = 0
-        cloth_num: int = 0
 
-        # 重命名一些骨骼后更新计数
-        def callback_count(a: int, b: int) -> None:
-            nonlocal success_num, named_num
-            success_num, named_num = success_num + a, named_num + b
+        result: Result = self._rename(
+            active_armature,
+            get_bones_with_collection(skin),
+        )
 
-        for item in skin_data.get_bones_with_collection(skin=current_skin):
-            self._rename_bone_dict(
-                active_armature=active_armature,
-                bone_dict=item.bones,
-                ow_bone_collection=item.collection,
-                callback=callback_count,
-            )
+        self.logger.info(result.message)
+        self.report({"INFO"}, result.message)
+        return {"FINISHED"}
+
+    def _rename(
+        self,
+        active_armature: Object,
+        collection_bones: list[CollectionBones],
+    ) -> Result:
+        _success_num: int = 0
+        _named_num: int = 0
 
         # 活动骨架所有骨骼
+        armature_bones: ArmatureBones = active_armature.data.bones  # type: ignore
+
+        self.logger.debug(f"当前角色所有骨骼数量为：{len(armature_bones)}")
+        self.logger.debug(
+            f"当全部需要重命名骨骼数量为：{sum(len(d.bones) for d in collection_bones)}"
+        )
+
+        for item in collection_bones:
+            # 创建相应骨骼集合（不存在则创建）
+            bone_collection: BoneCollection = get_bone_collection(
+                armature=active_armature, name=item.collection.value
+            )
+            # 获取未命名骨骼集合（如果存在）为了可能二次命名需要从中移除掉
+            unnamed_bone_collection: BoneCollection = get_bone_collection(
+                armature=active_armature,
+                name=OWBoneCollection.UNNAMED.value,
+                auto_create=False,
+            )
+            # 设定当前骨骼集合为活动
+            active_armature.data.collections.active = bone_collection  # type: ignore
+
+            for ow_key, human in item.bones.items():
+                # 如果被 io_scene_owm 命名过，则需要进行处理
+                owm_key: str = getBoneName(ow_key)
+                new_name: str = f"{item.prefix}{human.get_name()}"  # 加上前缀
+                final_key: str = owm_key if ow_key != owm_key else ow_key
+                if (
+                    new_name != "" and final_key in armature_bones
+                ):  # 未命名骨骼存在于骨架
+                    bone: Bone = armature_bones.get(final_key)
+                    # 指定至相应骨骼集合
+                    bone_collection.assign(bone)
+                    if (
+                        unnamed_bone_collection
+                    ):  # 如果有未命名骨骼集合，则移除已命名骨骼
+                        unnamed_bone_collection.unassign(bone)
+                    bone.name = new_name
+                    named_boen_name: str = bone.name
+                    if named_boen_name != new_name:
+                        self.logger.warning(
+                            f"命名冲突，应为{new_name} 冲突变为 {named_boen_name}"
+                        )
+                    _success_num += 1
+                elif new_name in armature_bones:  # 已命名骨骼存在于骨架
+                    _named_num += 1
+                    self.logger.debug(f"{new_name} 已命名骨骼存在于骨架")
+                else:
+                    # 有的角色可能不含某些骨骼
+                    self.logger.debug(f"{new_name} 未识别到")
+
+        # 整理未命名和布料骨骼
+        _cloth_count, _unname_count = self._organize_unnamed(active_armature)
+
+        return Result.ok(
+            message=f"已命名：{_success_num}, 未命名：{_unname_count}, 已存在：{_named_num}"
+        )
+
+    def _organize_unnamed(self, active_armature: Object) -> tuple[int, int]:
+        """整理不需要重命名的骨骼到对应集合"""
+        cloth_count: int = 0
+        unname_count: int = 0
         armature_bones: ArmatureBones = active_armature.data.bones  # type: ignore
 
         cloth_bone_collection: BoneCollection = armature_utils.get_bone_collection(
             armature=active_armature, name=OWBoneCollection.CLOTH.value
         )
-        unamed_bone_collection: BoneCollection = armature_utils.get_bone_collection(
-            armature=active_armature, name=OWBoneCollection.UNAMED.value
+        unnamed_bone_collection: BoneCollection = armature_utils.get_bone_collection(
+            armature=active_armature, name=OWBoneCollection.UNNAMED.value
         )
 
         for bone in armature_bones:
@@ -64,61 +131,13 @@ class RenameOWBonesOperator(BaseOperator):
                 "cloth_"
             ):  # cloth_开头的骨骼单独再放进 Cloth 骨骼集合
                 cloth_bone_collection.assign(bone)
-                cloth_num += 1
+                cloth_count += 1
             elif bone.name.startswith(
                 "bone_"
             ):  # 未命名的骨骼单独再放进 Unamed 骨骼集合
-                unamed_bone_collection.assign(bone)
-
-        unnamed_num: int = f"{len(armature_bones) - (success_num + named_num + cloth_num)}"  # 计数也不含 cloth_ 这种骨骼
-
-        self.report(
-            {"INFO"}, f"已命名：{success_num}未命名：{unnamed_num}已存在：{named_num}"
-        )
-        return {"FINISHED"}
-
-    def _rename_bone_dict(
-        self,
-        active_armature: Object,
-        bone_dict: dict,
-        ow_bone_collection: OWBoneCollection,
-        callback: Callable[[int, int], None],
-    ) -> None:
-        """重命名骨骼，并将骨骼放置到相应的骨骼集合"""
-
-        # 活动骨架所有骨骼
-        armature_bones: ArmatureBones = active_armature.data.bones  # type: ignore
-
-        success_num: int = 0
-        named_num: int = 0
-
-        # 创建相应骨骼集合（不存在则创建）
-        bone_collection: BoneCollection = armature_utils.get_bone_collection(
-            armature=active_armature, name=ow_bone_collection.value
-        )
-        # 获取未命名骨骼集合（如果存在）
-        unamed_bone_collection: BoneCollection = armature_utils.get_bone_collection(
-            armature=active_armature,
-            name=OWBoneCollection.UNAMED.value,
-            auto_create=False,
-        )
-        # 设定当前骨骼集合为活动
-        active_armature.data.collections.active = bone_collection  # type: ignore
-
-        for key, value in bone_dict.items():
-            new_name: str = value
-            if value != "" and key in armature_bones:  # 未命名骨骼存在于骨架
-                bone: Bone = armature_bones[key]
-                # 指定至相应骨骼集合
-                bone_collection.assign(bone)
-                if unamed_bone_collection:  # 如果有未命名骨骼集合，则移除已命名骨骼
-                    unamed_bone_collection.unassign(bone)
-                bone.name = new_name
-                success_num += 1
-            elif new_name in armature_bones:  # 已命名骨骼存在于骨架
-                named_num += 1
-        # 更新计数
-        callback(success_num, named_num)
+                unnamed_bone_collection.assign(bone)
+                unname_count += 1
+        return cloth_count, unname_count
 
 
 registry: list = [RenameOWBonesOperator]

@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context
 
 from ...shared.base.base_operator import BaseOperator
@@ -10,11 +8,12 @@ class GenerateOparetor(BaseOperator):
     bl_label = "生成骨架"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
-        return context.object.meldtool_object_properties.meld_rig.enabled == True
+        return cls.validate(
+            context.object.meldtool_object_properties.meld_rig.enabled == True,
+            "未启用 MeldRig",
+        )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         return {"CANCELLED"}
 

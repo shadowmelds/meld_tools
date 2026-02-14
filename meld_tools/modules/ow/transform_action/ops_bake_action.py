@@ -1,17 +1,14 @@
-from typing import override
-
 import bpy
 from bpy.types import (
     Context,
     Object,
 )
 
-from .._utils import skin_data
-
-from ....shared.base.base_operator import BaseOperator
-from ....shared.models.enums_ow_skin import OWSkin
-from ....shared.utils import transform_action_utils
 from ....public.props_scene_public import PublicSceneProperties
+from ....shared.base.base_operator import BaseOperator
+from ....shared.utils import transform_action_utils
+from .._data import skin_data
+from .._models.enums_ow_skin import OWSkin
 from .props_scene_ow_transform_action import OWTransfromActionSceneProperties
 
 
@@ -20,7 +17,6 @@ class BakeActionOperator(BaseOperator):
     bl_label: str = "烘焙动画至绑定"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         ow_transform_action: OWTransfromActionSceneProperties = (
             context.scene.meldtool_scene_properties.ow_transform_action  # type: ignore
@@ -28,7 +24,6 @@ class BakeActionOperator(BaseOperator):
         state: str = ow_transform_action.rig_armature_selection
         return cls.validate(bool(state) and state != "NONE", "没有选择绑定骨架")
 
-    @override
     def execute(self, context: Context) -> set[str]:
         public_props: PublicSceneProperties = (
             context.scene.meldtool_scene_properties.public  # type: ignore

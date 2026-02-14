@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import BoneCollection, BoneCollections, Context, Object
 
 from ....shared.base.base_operator import BaseOperator
@@ -61,11 +59,9 @@ class LoadBoneCollectionsOperator(BaseOperator):
     bl_description: str = "加载角色绑定骨骼集合"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_active_object_armature(context.active_object)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         if self.validate_active_object_armature(active_armature, self):

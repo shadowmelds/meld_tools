@@ -2,8 +2,8 @@ import bpy
 from bpy.props import EnumProperty
 from bpy.types import Context, PropertyGroup
 
-from ...shared.models.enums_ow_skin import OWSkin
 from ...shared.utils import properties_utils
+from ._models.enums_ow_skin import OWSkin
 
 
 class OWSceneProperties(PropertyGroup):
@@ -28,6 +28,11 @@ class OWSceneProperties(PropertyGroup):
                 OWSkin.TRACER_OVERWATCH2.value,
                 "猎空（守望先锋归来）",
                 "猎空（守望先锋归来）",
+            ),
+            (
+                OWSkin.TORBJORN_OVERWATCH2.value,
+                "托比昂（守望先锋归来）",
+                "托比昂（守望先锋归来）",
             ),
         ]
 

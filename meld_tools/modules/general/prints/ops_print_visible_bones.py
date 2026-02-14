@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import (
     ArmatureBones,
     Context,
@@ -16,7 +14,6 @@ class PrintVisibleBonesOperator(BaseOperator):
     bl_description: str = "打印可见骨骼（不支持孤立显示模式）"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         active_armature: Object | None = context.active_object
         return cls.validate(
@@ -24,7 +21,6 @@ class PrintVisibleBonesOperator(BaseOperator):
             "活动物体不是骨架物体",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         if self.validate(

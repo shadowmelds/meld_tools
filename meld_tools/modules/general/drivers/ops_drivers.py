@@ -1,5 +1,5 @@
 from dataclasses import fields
-from typing import Callable, override
+from typing import Callable
 
 from bpy.types import (
     AnimData,
@@ -53,7 +53,6 @@ class CopyDriversOperator(BaseOperator):
     bl_description: str = "复制驱动器临时存储"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         """是否存在驱动器"""
         props: DriversSceneProperties = (
@@ -61,7 +60,6 @@ class CopyDriversOperator(BaseOperator):
         )
         return cls.validate(props and props.active_driver >= 0, "不存在选中驱动器")
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object | None = context.active_object
         if self.validate_active_object(active_object, self):
@@ -122,7 +120,6 @@ class PasteDriversOperator(BaseOperator):
     bl_description: str = "粘贴驱动器到选中的物体的选中属性"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         active_object: Object | None = context.active_object
         props: DriversSceneProperties = (
@@ -153,7 +150,6 @@ class PasteDriversOperator(BaseOperator):
             )
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object | None = context.active_object
         driver_info: DriverInfo | None = get_from_internal_clipboard()
@@ -278,12 +274,10 @@ class RemoveDriversOperator(BaseOperator):
     bl_description: str = "删除驱动器"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         """剪贴板需存在驱动器信息"""
         return has_clipboard_data(check_type=DriverInfo)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         if has_clipboard_data(check_type=DriverInfo):
             return {"CANCELLED"}

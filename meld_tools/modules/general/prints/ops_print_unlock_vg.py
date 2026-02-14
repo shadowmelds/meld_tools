@@ -1,9 +1,8 @@
-from typing import override
+import logging
 
 from bpy.types import Context, Object
 
 from ....shared.base.base_operator import BaseOperator
-from ....shared.utils.logger import log_report
 
 
 class PrintUnlockVGOperator(BaseOperator):
@@ -11,8 +10,9 @@ class PrintUnlockVGOperator(BaseOperator):
     bl_label: str = "打印未锁定顶点组"
     bl_description: str = "打印选中网格物体所有未锁定顶点组名称到控制台"
 
+    logger: logging.Logger = logging.getLogger()
+
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         active_object: Object = context.active_object
         return cls.validate(
@@ -20,7 +20,6 @@ class PrintUnlockVGOperator(BaseOperator):
             "活动物体不是网格物体",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object = context.active_object
         if self.validate(
@@ -35,7 +34,10 @@ class PrintUnlockVGOperator(BaseOperator):
             if not vertex_group.lock_weight:
                 count += 1
                 print('"' + vertex_group.name + '",')
-        log_report(self, {"INFO"}, f"已打印 {count} 条")
+
+        msg: str = f"已打印 {count} 条"
+        self.logger.info(msg)
+        self.report({"INFO"}, msg)
         return {"FINISHED"}
 
 

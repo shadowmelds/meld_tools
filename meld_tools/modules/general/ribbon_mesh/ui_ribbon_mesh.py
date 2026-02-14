@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context, Panel, UILayout
 
 from ....panel import MainPanel
@@ -17,7 +15,6 @@ class RibbonPanel(MainPanel, Panel):
     bl_parent_id: str = "MELDTOOL_PT_general_main"
     bl_options: set = {"DEFAULT_CLOSED"}
 
-    @override
     def draw(self, context: Context) -> None:
         ribbon_mesh: RibbonMeshSceneProperties = (
             context.scene.meldtool_scene_properties.ribbon_mesh

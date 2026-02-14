@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context, Object
 
 from ....shared.base.base_operator import BaseOperator
@@ -13,11 +11,9 @@ class AlignBonesOperator(BaseOperator):
     bl_description: str = "选中所有骨骼尾端 XY 对齐到头部 XY"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_armature_edit(context)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         if self.validate_armature_edit(context, active_armature, self):

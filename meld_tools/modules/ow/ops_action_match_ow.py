@@ -1,5 +1,3 @@
-from typing import override
-
 import bpy
 from bpy.types import (
     Action,
@@ -12,10 +10,10 @@ from bpy.types import (
 
 from ...shared.base.base_operator import BaseOperator
 from ...shared.models.data_path_info import DataPathInfo
-from ...shared.models.enums_ow_skin import OWSkin
 from ...shared.utils.action_utils import get_bone_path_info
-from ._utils.skin_data import get_skin_bones
 from ...shared.utils.ui import force_refresh_animation
+from ._data.skin_data import get_skin_bones
+from ._models.enums_ow_skin import OWSkin
 
 
 class ActionMatchOWOperator(BaseOperator):
@@ -26,13 +24,11 @@ class ActionMatchOWOperator(BaseOperator):
     )
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate(
             bool(context.scene.meldtool_scene_properties.ow.action_selection)  # type: ignore
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         action: Action = bpy.data.actions[
             context.scene.meldtool_scene_properties.ow.action_selection  # type: ignore

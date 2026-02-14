@@ -1,4 +1,4 @@
-from typing import Any, Callable, override
+from typing import Any, Callable
 
 from bpy.types import (
     Context,
@@ -37,14 +37,12 @@ class GenerateVGOperator(BaseOperator):
             self._create_vertex_gruop(target_object, child, callback)
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_armature_pose_edit(context) and cls.validate(
             context.scene.meldtool_scene_properties.phys.target_object is not None,  # type: ignore
             "未选择目标模拟网格",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_armature: Object | None = context.active_object
         target_object: Object | None = (

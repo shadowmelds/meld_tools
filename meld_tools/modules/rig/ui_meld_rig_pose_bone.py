@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context, Panel, UILayout
 
 from .props_pose_bone_meld_rig import MeldRigPoseBoneProperties
@@ -13,7 +11,6 @@ class MeldRigPoseBonePanel(Panel):
     bl_context: str = "bone"
 
     @classmethod
-    @override
     def poll(cls: type["MeldRigPoseBonePanel"], context: Context) -> bool:
         return (
             context.mode == "POSE"
@@ -23,7 +20,6 @@ class MeldRigPoseBonePanel(Panel):
             and context.object.meldtool_object_properties.meld_rig.enabled
         )
 
-    @override
     def draw(self, context: Context) -> None:
         meld_rig: MeldRigPoseBoneProperties = (
             context.active_pose_bone.meldtool_pose_bone_properties.meld_rig

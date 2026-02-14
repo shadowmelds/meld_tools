@@ -16,7 +16,6 @@ from .ops_drivers import (
     CopyDriversOperator,
     PasteDriversOperator,
     RemoveDriversOperator,
-    override,
 )
 from .props_scene_drivers import DriversSceneProperties
 
@@ -24,7 +23,6 @@ from .props_scene_drivers import DriversSceneProperties
 class DRIVERS_UL_drivers(UIList):
     """显示所有驱动器"""
 
-    @override
     def draw_item(
         self,
         context: Context,
@@ -48,7 +46,6 @@ class DriversPanel(MainPanel, Panel):
     bl_parent_id: str = "MELDTOOL_PT_general_main"
     bl_options: set = {"DEFAULT_CLOSED"}
 
-    @override
     def draw(self, context: Context) -> None:
         active_object: Object = context.active_object
         layout: UILayout = self.layout
@@ -122,11 +119,9 @@ class RefreshDriversOperator(BaseOperator):
     bl_description: str = "刷新驱动器列表"
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return cls.validate_active_object(context.active_object)
 
-    @override
     def execute(self, context: Context) -> set[str]:
         active_object: Object = context.active_object
         if self.validate_active_object(active_object, self):

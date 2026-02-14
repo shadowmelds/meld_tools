@@ -1,13 +1,10 @@
-from typing import override
-
 import bpy
 from bpy.types import Context, Object
 
-from .._utils import skin_data
-
 from ....shared.base.base_operator import BaseOperator
-from ....shared.models.enums_ow_skin import OWSkin
 from ....shared.utils import transform_action_utils
+from .._data import skin_data
+from .._models.enums_ow_skin import OWSkin
 from .props_scene_ow_transform_action import OWTransfromActionSceneProperties
 
 
@@ -17,7 +14,6 @@ class UnConstraintOW2RigOperator(BaseOperator):
     bl_description: str = "守望先锋骨骼对应的绑定骨骼清除复制变换约束"
 
     @classmethod
-    @override
     def poll(cls: type["UnConstraintOW2RigOperator"], context: Context):
         ow_transform_action: OWTransfromActionSceneProperties = (
             context.scene.meldtool_scene_properties.ow_transform_action  # type: ignore
@@ -29,7 +25,6 @@ class UnConstraintOW2RigOperator(BaseOperator):
             "ow骨架和绑定骨架不能是同一个骨架",
         )
 
-    @override
     def execute(self, context: Context) -> set[str]:
         ow_transform_action: OWTransfromActionSceneProperties = (
             context.scene.meldtool_scene_properties.ow_transform_action  # type: ignore

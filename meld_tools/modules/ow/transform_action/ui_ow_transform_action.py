@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context, Panel, UILayout
 
 from ....panel import MainPanel
@@ -20,7 +18,6 @@ class OWTransfromActionPanel(MainPanel, Panel):
     bl_parent_id: str = "MELDTOOL_PT_ow_main"
     bl_options: set = {"DEFAULT_CLOSED"}
 
-    @override
     def draw(self, context: Context) -> None:
         ow_transform_action: OWTransfromActionSceneProperties = (
             context.scene.meldtool_scene_properties.ow_transform_action  # type: ignore

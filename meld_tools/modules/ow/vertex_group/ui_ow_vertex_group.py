@@ -1,5 +1,3 @@
-from typing import override
-
 from bpy.types import Context, Panel, UILayout
 
 from ....panel import MainPanel
@@ -15,7 +13,6 @@ class OWVertexGroupPanel(MainPanel, Panel):
     bl_parent_id: str = "MELDTOOL_PT_ow_main"
     bl_options: set = {"DEFAULT_CLOSED"}
 
-    @override
     def draw(self, context: Context) -> None:
         column: UILayout = self.layout.column()
         column.operator(RenameOWVGOperator.bl_idname, text="命名守望先锋顶点组")

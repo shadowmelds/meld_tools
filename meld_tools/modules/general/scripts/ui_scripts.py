@@ -1,9 +1,7 @@
-from typing import override
-
 from bpy.types import Context, Panel, UILayout
 
-from ....shared.models.scripts import Script, ScriptID, get_scripts
 from ....panel import MainPanel
+from ....shared.models.scripts import Script, ScriptID, get_scripts
 from .ops_scripts import RemoveScriptOperator, WriteScriptOperator
 
 
@@ -13,7 +11,6 @@ class ScriptsPanel(MainPanel, Panel):
     bl_parent_id: str = "MELDTOOL_PT_general_main"
     bl_options: set = {"DEFAULT_CLOSED"}
 
-    @override
     def draw(self, context: Context) -> None:
         scripts: dict[str, Script] = get_scripts(context)
         column1: UILayout = self.layout.column(align=True)

@@ -1,12 +1,12 @@
-from typing import Literal, override
+from typing import Literal
 
 import bpy
 from bpy.props import StringProperty
 from bpy.types import Context, Event, Text
 
+from ....paths import SCRIPT_PATH
 from ....shared.base.base_operator import BaseOperator
 from ....shared.utils.script_utils import run_script, write_script
-from ....paths import SCRIPT_PATH
 
 
 class WriteScriptOperator(BaseOperator):
@@ -17,17 +17,14 @@ class WriteScriptOperator(BaseOperator):
     script_name: StringProperty(name="脚本名")
     message: StringProperty(default="脚本 f{script_name} 已存在，是否覆盖？")
 
-    @override
     def draw(self, context: Context) -> None:
         layout = self.layout
         layout.label(text=self.message)
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return True
 
-    @override
     def execute(self, context: Context) -> set[str]:
         if self.validate(bool(self.script_name), "文件名不能为空", self):
             return {"CANCELLED"}
@@ -42,7 +39,6 @@ class WriteScriptOperator(BaseOperator):
         self.report({"INFO"}, f"已成功写入 {self.script_name}")
         return {"FINISHED"}
 
-    @override
     def invoke(
         self, context: Context, event: Event
     ) -> (
@@ -68,11 +64,9 @@ class RemoveScriptOperator(BaseOperator):
     script_name: StringProperty(name="脚本名")
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return True
 
-    @override
     def execute(self, context: Context) -> set[str]:
         if self.validate(bool(self.script_name), "文件名不能为空", self):
             return {"CANCELLED"}
@@ -83,7 +77,6 @@ class RemoveScriptOperator(BaseOperator):
         self.report({"INFO"}, f"已移除 {self.script_name}")
         return {"FINISHED"}
 
-    @override
     def invoke(
         self, context: Context, event: Event
     ) -> set[
@@ -100,11 +93,9 @@ class RunScriptOperator(BaseOperator):
     script_name: StringProperty(name="脚本名")
 
     @classmethod
-    @override
     def poll(cls, context: Context) -> bool:
         return True
 
-    @override
     def execute(self, context: Context) -> set[str]:
         if run_script(file_name=self.script_name):
             self.report({"INFO"}, f"已运行 {self.script_name}")

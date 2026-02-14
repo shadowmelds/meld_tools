@@ -20,7 +20,6 @@ def get_similar_bones(bone_name: str, rig_id: RigID) -> str:
 def main(context: Context) -> None:
     # rigify、mhx、cloud_rig
     # 通过任意一个名称获取同类
-
     bones: Iterable[PoseBone] = context.active_object.pose.bones
     for bone in bones:
         rigify_bone_name: str = get_similar_bones(name=bone.name, rig_id=RigID.RIGIFY)
